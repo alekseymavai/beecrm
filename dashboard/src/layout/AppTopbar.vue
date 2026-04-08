@@ -1,27 +1,50 @@
 <script setup>
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute();
+const router = useRouter();
 
-const titles = {
-    '/orders': 'Заказы',
-    '/clients': 'Клиенты',
-    '/products': 'Товары',
-    '/': 'Главная',
-};
+const SECTION = { '/orders': 'Заказы', '/clients': 'Клиенты', '/products': 'Товары' };
 
-const title = computed(() => {
-    for (const [prefix, label] of Object.entries(titles)) {
-        if (prefix !== '/' && route.path.startsWith(prefix)) return label;
+const breadcrumbs = computed(() => {
+    const path = route.path;
+    if (path === '/') return [{ label: 'Главная', to: '/', last: true }];
+
+    const section = Object.keys(SECTION).find(k => path.startsWith(k));
+    if (!section) return [{ label: 'BEECRM', to: '/', last: true }];
+
+    const parts = [{ label: SECTION[section], to: section, last: path === section }];
+    if (path !== section) {
+        const id = path.replace(section + '/', '');
+        parts.push({ label: `#${id}`, to: path, last: true });
     }
-    if (route.path === '/') return titles['/'];
-    return 'BEECRM';
+    return [{ label: 'Главная', to: '/', last: false }, ...parts];
 });
 </script>
 
 <template>
-    <header class="app-topbar">
-        <span class="app-topbar__title">{{ title }}</span>
+    <header class="topbar">
+        <!-- Breadcrumb -->
+        <nav class="topbar-breadcrumb">
+            <template v-for="(crumb, idx) in breadcrumbs" :key="crumb.to">
+                <span v-if="idx > 0" class="topbar-sep">/</span>
+                <button
+                    v-if="!crumb.last"
+                    class="topbar-crumb topbar-crumb--link"
+                    @click="router.push(crumb.to)"
+                >{{ crumb.label }}</button>
+                <span v-else class="topbar-crumb topbar-crumb--current">{{ crumb.label }}</span>
+            </template>
+        </nav>
+
+        <!-- Actions -->
+        <div class="topbar-actions">
+            <button class="topbar-icon-btn" title="Уведомления">
+                <i class="pi pi-bell"></i>
+            </button>
+            <div class="topbar-divider"></div>
+            <div class="topbar-avatar">A</div>
+        </div>
     </header>
 </template>
