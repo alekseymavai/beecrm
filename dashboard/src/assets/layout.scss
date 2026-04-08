@@ -1,0 +1,222 @@
+/* Sakai Vue Layout — воссоздано из sakai-assets партиалов */
+
+/* _core.scss */
+html {
+    height: 100%;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    color: var(--p-text-color);
+    background-color: var(--p-surface-ground, #f8f9fa);
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a { text-decoration: none; }
+
+.layout-wrapper { min-height: 100vh; }
+
+/* _topbar.scss */
+.layout-topbar {
+    position: fixed;
+    height: 4rem;
+    z-index: 997;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 2rem;
+    background-color: var(--p-surface-card, #ffffff);
+    border-bottom: 1px solid var(--p-surface-200, #e9ecef);
+    display: flex;
+    align-items: center;
+
+    .layout-topbar-logo-container {
+        width: 20rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .layout-topbar-logo {
+        display: inline-flex;
+        align-items: center;
+        font-size: 1.5rem;
+        border-radius: 6px;
+        color: var(--p-text-color);
+        font-weight: 500;
+        gap: 0.5rem;
+
+        svg { width: 3rem; }
+    }
+
+    .layout-topbar-action {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        color: var(--p-text-color);
+        cursor: pointer;
+        border: none;
+        background: transparent;
+
+        &:hover { background-color: var(--p-surface-100, #f8f9fa); }
+
+        i { font-size: 1.25rem; }
+        span { font-size: 1rem; display: none; }
+    }
+
+    .layout-menu-button { margin-right: 0.5rem; }
+    .layout-topbar-menu-button { display: none; }
+    .layout-topbar-actions { margin-left: auto; display: flex; gap: 1rem; }
+    .layout-topbar-menu-content { display: flex; gap: 1rem; }
+}
+
+/* _menu.scss */
+.layout-sidebar {
+    position: fixed;
+    width: 20rem;
+    height: calc(100vh - 8rem);
+    z-index: 999;
+    overflow-y: auto;
+    user-select: none;
+    top: 6rem;
+    left: 2rem;
+    background-color: var(--p-surface-overlay, #ffffff);
+    border-radius: 12px;
+    border: 1px solid var(--p-surface-200, #e9ecef);
+    padding: 0.5rem 1.5rem;
+}
+
+.layout-menu {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+
+    .layout-root-menuitem > .layout-menuitem-root-text {
+        font-size: 0.857rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--p-text-muted-color, #6c757d);
+        margin: 0.75rem 0;
+    }
+
+    .layout-root-menuitem > a { display: none; }
+
+    a.active-menuitem > .layout-submenu-toggler { transform: rotate(-180deg); }
+    li.active-menuitem > a .layout-submenu-toggler { transform: rotate(-180deg); }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+
+        a {
+            display: flex;
+            align-items: center;
+            position: relative;
+            outline: 0 none;
+            color: var(--p-text-color);
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+
+            .layout-menuitem-icon { margin-right: 0.5rem; }
+            .layout-submenu-toggler { font-size: 75%; margin-left: auto; }
+
+            &.active-route { font-weight: 700; color: var(--p-primary-color, #6366f1); }
+            &:hover { background-color: var(--p-surface-100, #f8f9fa); }
+        }
+
+        ul { overflow: hidden; border-radius: 8px; }
+        ul li a { padding-left: 2rem; }
+        ul li ul li a { padding-left: 3rem; }
+    }
+}
+
+.layout-submenu-enter-from, .layout-submenu-leave-to { max-height: 0; }
+.layout-submenu-enter-to, .layout-submenu-leave-from { max-height: 1000px; }
+.layout-submenu-leave-active { overflow: hidden; transition: max-height 0.45s cubic-bezier(0, 1, 0, 1); }
+.layout-submenu-enter-active { overflow: hidden; transition: max-height 1s ease-in-out; }
+
+/* _main.scss */
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    justify-content: space-between;
+    padding: 6rem 2rem 0 2rem;
+    transition: margin-left 0.2s;
+}
+
+.layout-main {
+    flex: 1 1 auto;
+    padding-bottom: 2rem;
+}
+
+/* _footer.scss */
+.layout-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0;
+    gap: 0.5rem;
+    border-top: 1px solid var(--p-surface-200, #e9ecef);
+}
+
+/* _responsive.scss */
+@media (min-width: 992px) {
+    .layout-wrapper.layout-overlay {
+        .layout-main-container { margin-left: 0; padding-left: 2rem; }
+        .layout-sidebar {
+            transform: translateX(-100%);
+            left: 0; top: 0; height: 100vh;
+            border-radius: 0;
+        }
+        &.layout-overlay-active .layout-sidebar { transform: translateX(0); }
+    }
+
+    .layout-wrapper.layout-static {
+        .layout-main-container { margin-left: 22rem; }
+        &.layout-static-inactive {
+            .layout-sidebar { transform: translateX(-100%); left: 0; }
+            .layout-main-container { margin-left: 0; padding-left: 2rem; }
+        }
+    }
+
+    .layout-mask { display: none; }
+}
+
+@media (max-width: 991px) {
+    .layout-wrapper {
+        .layout-main-container { margin-left: 0; padding-left: 2rem; }
+        .layout-sidebar {
+            transform: translateX(-100%);
+            left: 0; top: 0; height: 100vh;
+            border-radius: 0;
+            transition: transform 0.4s cubic-bezier(0.05, 0.74, 0.2, 0.99);
+        }
+        .layout-mask {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            z-index: 998; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        &.layout-mobile-active {
+            .layout-sidebar { transform: translateX(0); }
+            .layout-mask { display: block; }
+        }
+    }
+}
+
+/* _utils.scss */
+.p-toast.p-toast-top-right,
+.p-toast.p-toast-top-left,
+.p-toast.p-toast-top-center { top: 100px; }
