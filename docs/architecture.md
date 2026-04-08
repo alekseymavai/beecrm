@@ -1,8 +1,8 @@
 # BEECRM — Архитектура
 
-> Согласовано командой AgentForge (Scout → Architect → Security)
-> Дата: 08.04.2026 · Security: YELLOW ACCEPTED
-> ADR-001: Вариант A — FastAPI + SQLAlchemy + PostgreSQL
+> Обновлено командой AgentForge (Scout → Architect → Security)
+> Дата: 08.04.2026 · Security: RED (см. открытые блокеры)
+> ADR-001: FastAPI + SQLAlchemy + PostgreSQL
 
 ---
 
@@ -25,16 +25,18 @@ BEEBOT — smart frontend (Telegram-бот), BEECRM — backend-центр да�
           └────────────────────────┴──────────────────────┘
                                    │
                     BaseAdapter.normalize(raw)
-                           │
-                    Pydantic-схема
-                    (allowed_keys, max_length, ≤64KB)
-                           │
-                           ▼
-                      OrderService
+                    (forbidden keys, trim >2048, ≤64KB)
+                                   │
+                                   ▼
+                    POST /orders/from-source  ← ещё не реализован
+                                   │
+                    client_service.find_or_create()
+                                   │
+                    order_service.create_order()
 ```
 
-**Правило безопасности:** `BaseAdapter.normalize()` — template method.
-Сырые данные физически не могут покинуть слой адаптеров без прохождения Pydantic-схемы.
+**Правило безопасности:** сырые данные не могут покинуть слой адаптеров
+без прохождения `BaseAdapter.normalize()`.
 
 ---
 
@@ -45,7 +47,7 @@ BEEBOT — smart frontend (Telegram-бот), BEECRM — backend-центр да�
    └──────────────────────────→ CANCELLED
 ```
 
-Матрица допустимых переходов в `services/fsm.py`.
+Матрица допустимых переходов — `services/fsm.py`.
 Каждый переход записывается в `order_events` (append-only, только INSERT).
 
 ---
@@ -68,107 +70,128 @@ order_events (append-only)
 ────────────────────────────────
 id
 order_id FK → orders
-from_status
+from_status  (NULL = событие создания)
 to_status
 actor
 meta JSONB
 created_at
-[INSERT ONLY — UPDATE/DELETE запрещены]
+[INSERT ONLY — UPDATE/DELETE запрещены на уровне сервиса]
 ```
 
 ---
 
-## API (FastAPI)
+## API (FastAPI) — текущее состояние
 
-| Метод | Путь | Описание |
-|-------|------|----------|
-| POST | `/orders` | Создать заказ (source + raw_data + client_id) |
-| GET | `/orders/{id}` | Получить заказ |
-| PATCH | `/orders/{id}/status` | Сменить статус (FSM, недопустимый → 422) |
-| GET | `/orders` | Список с фильтрами: source / status / client |
-| POST | `/clients` | Создать клиента (или найти по phone+email) |
-| GET | `/clients/{id}` | Клиент |
-| PUT | `/clients/{id}` | Обновить клиента |
-| GET | `/clients/{id}/history` | История заказов + события |
-
----
-
-## Конфигурация и безопасность (ADR-001)
-
-```python
-# settings.py — все секреты ТОЛЬКО из os.environ, без fallback
-DB_URL     = os.environ["DB_URL"]      # KeyError если не задан
-SECRET_KEY = os.environ["SECRET_KEY"]
-MAX_PAYLOAD_BYTES = 65536              # единственный источник лимита
-
-def startup_check():
-    for key in REQUIRED_VARS:
-        if key not in os.environ:
-            raise ValueError(f"Обязательная переменная не задана: {key}")
-```
-
-**Правила:**
-1. Секреты — только `os.environ[KEY]`, никаких `.get(KEY, default)`
-2. `startup_check()` вызывается при старте приложения
-3. `MAX_PAYLOAD_BYTES` импортируется и в Pydantic-схему и в миграцию — один источник правды
-4. `order_events` — append-only на уровне сервиса; в будущем добавить PostgreSQL RULE
+| Метод | Путь | Статус | Описание |
+|-------|------|--------|----------|
+| POST | `/clients/` | ✅ | Создать клиента |
+| GET | `/clients/` | ✅ | Список клиентов |
+| GET | `/clients/{id}` | ✅ | Получить клиента |
+| PATCH | `/clients/{id}` | ✅ | Обновить клиента |
+| GET | `/clients/{id}/history` | ❌ план | История заказов клиента |
+| POST | `/orders/` | ⚠️ | Создать заказ (обходит order_service — нет OrderEvent) |
+| GET | `/orders/` | ✅ | Список заказов |
+| GET | `/orders/{id}` | ✅ | Получить заказ |
+| PATCH | `/orders/{id}/status` | ✅ | Сменить статус (FSM) |
+| GET | `/orders/{id}/history` | ❌ план | История переходов заказа |
+| POST | `/orders/from-source` | ❌ план | Принять заказ из источника через адаптер |
 
 ---
 
-## Структура файлов
+## Структура файлов (факт)
 
 ```
 BEECRM/
+├── CLAUDE.md                ← правила работы в проекте
+├── context.yaml             ← AgentForge контекст, телос, fragile zones
 ├── settings.py              ← секреты из env, startup_check()
-├── db.py                    ← SQLAlchemy engine + SessionLocal
-├── main.py                  ← FastAPI app, lifespan + роутеры
+├── db.py                    ← SQLAlchemy engine + get_session()
+├── main.py                  ← FastAPI app, lifespan
 ├── models/
-│   ├── client.py            ← Client: id, phone, email, name
-│   ├── order.py             ← Order: id, client_id, source, status, payload JSONB
-│   └── order_event.py       ← OrderEvent append-only
+│   ├── client.py            ← Client
+│   ├── order.py             ← Order + OrderSource + OrderStatus
+│   └── order_event.py       ← OrderEvent (append-only)
 ├── schemas/
-│   ├── payload_mixin.py     ← PayloadSizeMixin (64KB, json.dumps separators=(',',':'))
-│   ├── order_schema.py      ← UDSPayloadSchema, MessengerPayloadSchema, TablePayloadSchema
-│   └── client_schema.py     ← ClientCreateSchema, ClientUpdateSchema
+│   ├── client.py            ← ClientCreate / ClientRead / ClientUpdate
+│   └── order.py             ← OrderCreate / OrderRead / OrderStatusUpdate
 ├── adapters/
-│   ├── base_adapter.py      ← BaseAdapter: normalize() = _parse() → schema.validate()
-│   ├── uds_adapter.py       ← UDSAdapter(BaseAdapter)
-│   ├── messenger_adapter.py ← MessengerAdapter(BaseAdapter)
-│   └── table_adapter.py     ← TableAdapter: openpyxl с read_only=True, data_only=True
+│   ├── base.py              ← BaseAdapter: normalize() + _validate()
+│   ├── uds_adapter.py       ← UDSAdapter
+│   ├── messenger_adapter.py ← MessengerAdapter
+│   └── table_adapter.py     ← TableAdapter + from_xlsx_row()
 ├── services/
-│   ├── fsm.py               ← OrderFSM: матрица переходов, transition()
+│   ├── fsm.py               ← матрица переходов, transition(), FSMError
 │   ├── order_service.py     ← create_order(), transition_status(), get_history()
-│   └── client_service.py    ← find_or_create(), get_history(), update()
+│   └── client_service.py    ← find_or_create() (дедупликация), get_history()
 ├── api/
-│   ├── orders.py            ← APIRouter /orders
-│   └── clients.py           ← APIRouter /clients
+│   ├── clients.py           ← APIRouter /clients
+│   └── orders.py            ← APIRouter /orders  ⚠️ требует рефактора
 ├── migrations/
 │   └── versions/
-│       └── 0001_initial.py  ← таблицы + CHECK octet_length(payload::text) <= 65536
+│       └── 0001_initial.py  ← clients, orders, order_events + CHECK payload
 ├── tests/
-│   ├── conftest.py          ← fixtures (+ отдельный интеграционный тест на реальном PG)
-│   ├── test_adapters.py     ← normalize(): валидный / >64KB / forbidden keys
-│   ├── test_schemas.py      ← PayloadSizeMixin unit-тесты
-│   ├── test_order_service.py← FSM: корректные и запрещённые переходы
-│   └── test_client_service.py← дедупликация: один клиент из двух источников
+│   ├── conftest.py          ← SQLite in-memory + патч JSONB→JSON
+│   ├── test_adapters.py     ← 8 тестов (normalize + Security)
+│   ├── test_client_service.py ← 6 тестов (дедупликация, fragile zone HIGH)
+│   └── test_order_service.py  ← 8 тестов (FSM + история)
 ├── docs/
 │   └── architecture.md      ← этот файл
-├── context.yaml             ← AgentForge контекст
-├── .env.example             ← все обязательные переменные (без значений)
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
 └── requirements.txt
 ```
 
 ---
 
-## Открытые вопросы (Security MEDIUM — не блокируют)
+## Инфраструктура (прод)
 
-| # | Проблема | Где | Решение |
-|---|----------|-----|---------|
-| 1 | CHECK constraint не покрыт тестами (SQLite отключает его) | tests/conftest.py | Добавить интеграционный тест на testcontainers PostgreSQL |
-| 2 | `json.dumps()` vs `octet_length()` могут давать разный размер | payload_mixin.py | Фиксировать `separators=(',', ':'), ensure_ascii=False` |
-| 3 | `startup_check()` может быть подавлен при импорте в тестах | db.py | Дополнительный вызов в `lifespan` hook `main.py` |
-| 4 | `.env` может попасть в git | .gitignore | Добавить `detect-secrets` pre-commit hook |
+```
+Интернет
+    │
+    ▼ порт 8000 (HTTP — временно, нужен HTTPS)
+vm4115781.firstbyte.club (178.253.39.215)
+    │
+    ▼
+systemd: beecrm.service
+    │
+    ▼
+uvicorn main:app (ai-agent, ~/BEECRM/.venv)
+    │
+    ▼
+PostgreSQL 14 (localhost:5432, db: beecrm)
+```
 
 ---
 
-*Сгенерировано AgentForge · Scout → Architect → Security · 08.04.2026*
+## Открытые блокеры (Security RED)
+
+| # | Блокер | Решение | Этап |
+|---|--------|---------|------|
+| 1 | Нет аутентификации — API открыт для всех | `X-API-Key` заголовок | 2 |
+| 2 | HTTP, не HTTPS — данные клиентов открытым текстом | nginx + Let's Encrypt | 3 |
+| 3 | `POST /orders/` не пишет OrderEvent — история неполная | рефактор через `order_service` | 1 |
+
+## Открытые задачи (не блокируют)
+
+| # | Задача | Этап |
+|---|--------|------|
+| 4 | `GET /orders/{id}/history` и `GET /clients/{id}/history` | 1 |
+| 5 | `POST /orders/from-source` — единая точка входа через адаптер | 4 |
+| 6 | Импорт из Excel / Google Таблицы | 5 |
+| 7 | Уведомления клиентам (Telegram/WhatsApp) | 6 |
+
+---
+
+## Fragile Zones (из context.yaml)
+
+| Зона | Риск | Статус |
+|------|------|--------|
+| `client_dedup` | UDS + мессенджер — один клиент | ✅ реализовано в `client_service.find_or_create()` |
+| `uds_sync` | Нет официального UDS API | ⏳ не начато |
+| `cdek_address` | Клиенты дают домашний адрес вместо СДЭК | ⏳ не начато |
+| `order_addon` | Дозаказ должен добавляться к существующему | ⏳ не начато |
+
+---
+
+*Обновлено AgentForge · Scout → Architect → Security · 08.04.2026*
