@@ -1,38 +1,58 @@
 # BEECRM — Архитектура
 
-> Обновлено командой AgentForge (Scout → Architect → Security)
-> Дата: 08.04.2026 · Security: RED (см. открытые блокеры)
-> ADR-001: FastAPI + SQLAlchemy + PostgreSQL
+> Обновлено командой AgentForge · 08.04.2026
+> ADR-001: FastAPI + Integram API (хранилище)
 
 ---
 
 ## Телос
 
 CRM-система для пчеловода Александра Дмитрова («Усадьба Дмитровых»).
-Принимает заказы из трёх источников, управляет жизненным циклом, хранит клиентскую базу с историей.
-BEEBOT — smart frontend (Telegram-бот), BEECRM — backend-центр данных.
+Принимает заказы из нескольких источников, управляет жизненным циклом, хранит клиентскую базу с историей.
 
 ---
 
-## Источники заказов → Адаптеры
+## Архитектура
 
 ```
-  UDS (интернет-магазин)   Мессенджер (TG/WA)   Таблица (Google/Excel)
-          │                        │                      │
-          ▼                        ▼                      ▼
-   UDSAdapter              MessengerAdapter         TableAdapter
-          │                        │                      │
-          └────────────────────────┴──────────────────────┘
-                                   │
-                    BaseAdapter.normalize(raw)
-                    (forbidden keys, trim >2048, ≤64KB)
-                                   │
-                                   ▼
-                    POST /orders/from-source  ← ещё не реализован
-                                   │
-                    client_service.find_or_create()
-                                   │
-                    order_service.create_order()
+UDS / Telegram / WhatsApp / Vue Dashboard
+              │
+              ▼
+        BEECRM API (FastAPI)
+        ├─ Адаптеры (нормализация входящих данных)
+        ├─ FSM (контроль переходов статусов)
+        ├─ Дедупликация клиентов
+        └─ X-API-Key аутентификация
+              │
+              ▼
+        Integram API (ai2o.online/beecrm)
+        ├─ Клиенты (typeId 16)
+        ├─ Заказы (typeId 17)
+        ├─ История заказов (typeId 37, child от 17)
+        ├─ Статусы (typeId 14, справочник)
+        └─ Источники (typeId 15, справочник)
+```
+
+---
+
+## Источники → Адаптеры
+
+```
+UDS          Мессенджер (TG/WA)    Таблица (Excel/Google)
+ │                  │                       │
+ ▼                  ▼                       ▼
+UDSAdapter   MessengerAdapter         TableAdapter
+         └───────────┴───────────────────┘
+                         │
+              BaseAdapter.normalize(raw)
+              (forbidden keys, trim >2048, ≤64KB)
+                         │
+                         ▼
+              POST /orders/from-source
+                         │
+              client_service.find_or_create()
+                         │
+              order_service.create_order()
 ```
 
 **Правило безопасности:** сырые данные не могут покинуть слой адаптеров
@@ -43,105 +63,143 @@ BEEBOT — smart frontend (Telegram-бот), BEECRM — backend-центр да�
 ## Жизненный цикл заказа (FSM)
 
 ```
-  NEW → CONFIRMED → IN_PROGRESS → DONE
-   └──────────────────────────→ CANCELLED
+NEW → CONFIRMED → IN_PROGRESS → DONE
+ └─────────────────────────→ CANCELLED
 ```
 
 Матрица допустимых переходов — `services/fsm.py`.
-Каждый переход записывается в `order_events` (append-only, только INSERT).
+Каждый переход записывается в История заказов (typeId 37, append-only).
 
 ---
 
-## Модели (PostgreSQL)
+## Integram — маппинг
 
-```
-clients                          orders
-────────────────────             ────────────────────────────
-id                               id
-phone  ─┐                        client_id FK → clients
-email  ─┴─ UNIQUE                source: UDS | MESSENGER | TABLE
-name                             status: NEW | CONFIRMED | IN_PROGRESS | DONE | CANCELLED
-created_at                       payload JSONB
-updated_at                         CHECK octet_length(payload::text) <= 65536
-                                 created_at
-                                 updated_at
+### Статусы (typeId 14)
 
-order_events (append-only)
-────────────────────────────────
-id
-order_id FK → orders
-from_status  (NULL = событие создания)
-to_status
-actor
-meta JSONB
-created_at
-[INSERT ONLY — UPDATE/DELETE запрещены на уровне сервиса]
-```
+| OrderStatus | Integram | objId |
+|-------------|---------|-------|
+| NEW         | Новый   | 18    |
+| CONFIRMED   | Подтверждён | 190 |
+| IN_PROGRESS | В работе | 19   |
+| DONE        | Выполнен | 20   |
+| CANCELLED   | Отменён  | 21   |
+
+### Источники (typeId 15)
+
+| OrderSource | Integram | objId |
+|-------------|---------|-------|
+| UDS         | UDS      | 22    |
+| MESSENGER   | Telegram | 23    |
+| TABLE       | Сайт     | 25    |
+
+### Клиенты (typeId 16)
+
+| Поле  | col ID |
+|-------|--------|
+| name  | —      |
+| phone | 28     |
+| email | 29     |
+| notes | 27     |
+
+### Заказы (typeId 17)
+
+| Поле       | col ID |
+|------------|--------|
+| client_id  | 30 (ref→16) |
+| status     | 31 (ref→14) |
+| source     | 32 (ref→15) |
+| payload    | 34 (memo, JSON) |
+| amount     | 33     |
+| created_at | 35     |
+
+### История заказов (typeId 37, child от 17)
+
+| Поле        | col ID |
+|-------------|--------|
+| from_status | 38     |
+| to_status   | 39     |
+| actor       | 40     |
+| meta        | 41     |
+| created_at  | 42     |
 
 ---
 
-## API (FastAPI) — текущее состояние
+## API (FastAPI)
 
-| Метод | Путь | Статус | Описание |
-|-------|------|--------|----------|
-| POST | `/clients/` | ✅ | Создать клиента |
-| GET | `/clients/` | ✅ | Список клиентов |
-| GET | `/clients/{id}` | ✅ | Получить клиента |
-| PATCH | `/clients/{id}` | ✅ | Обновить клиента |
-| GET | `/clients/{id}/history` | ❌ план | История заказов клиента |
-| POST | `/orders/` | ⚠️ | Создать заказ (обходит order_service — нет OrderEvent) |
-| GET | `/orders/` | ✅ | Список заказов |
-| GET | `/orders/{id}` | ✅ | Получить заказ |
-| PATCH | `/orders/{id}/status` | ✅ | Сменить статус (FSM) |
-| GET | `/orders/{id}/history` | ❌ план | История переходов заказа |
-| POST | `/orders/from-source` | ❌ план | Принять заказ из источника через адаптер |
+| Метод | Путь | Описание |
+|-------|------|----------|
+| POST | `/clients/` | Создать клиента |
+| GET | `/clients/` | Список клиентов |
+| GET | `/clients/{id}` | Получить клиента |
+| PATCH | `/clients/{id}` | Обновить клиента |
+| GET | `/clients/{id}/history` | История заказов клиента |
+| POST | `/orders/` | Создать заказ |
+| GET | `/orders/` | Список заказов |
+| GET | `/orders/{id}` | Получить заказ |
+| PATCH | `/orders/{id}/status` | Сменить статус (FSM) |
+| GET | `/orders/{id}/history` | История переходов заказа |
+| POST | `/orders/from-source` | Принять заказ из источника через адаптер |
 
 ---
 
-## Структура файлов (факт)
+## Структура файлов
 
 ```
 BEECRM/
-├── CLAUDE.md                ← правила работы в проекте
-├── context.yaml             ← AgentForge контекст, телос, fragile zones
+├── CLAUDE.md
+├── context.yaml
 ├── settings.py              ← секреты из env, startup_check()
-├── db.py                    ← SQLAlchemy engine + get_session()
-├── main.py                  ← FastAPI app, lifespan
-├── models/
-│   ├── client.py            ← Client
-│   ├── order.py             ← Order + OrderSource + OrderStatus
-│   └── order_event.py       ← OrderEvent (append-only)
+├── main.py                  ← FastAPI app, lifespan + IntegramClient.authenticate()
+├── integram/
+│   ├── client.py            ← async httpx клиент Integram API
+│   ├── deps.py              ← get_integram() FastAPI Depends
+│   ├── mappers.py           ← dict → Pydantic схемы
+│   └── exceptions.py        ← IntegramError, IntegramNotFoundError
 ├── schemas/
+│   ├── enums.py             ← OrderStatus, OrderSource
 │   ├── client.py            ← ClientCreate / ClientRead / ClientUpdate
 │   └── order.py             ← OrderCreate / OrderRead / OrderStatusUpdate
 ├── adapters/
 │   ├── base.py              ← BaseAdapter: normalize() + _validate()
-│   ├── uds_adapter.py       ← UDSAdapter
-│   ├── messenger_adapter.py ← MessengerAdapter
-│   └── table_adapter.py     ← TableAdapter + from_xlsx_row()
+│   ├── uds_adapter.py
+│   ├── messenger_adapter.py
+│   └── table_adapter.py     ← + from_xlsx_row()
 ├── services/
-│   ├── fsm.py               ← матрица переходов, transition(), FSMError
+│   ├── fsm.py               ← ALLOWED_TRANSITIONS, transition(), FSMError
 │   ├── order_service.py     ← create_order(), transition_status(), get_history()
-│   └── client_service.py    ← find_or_create() (дедупликация), get_history()
+│   └── client_service.py    ← find_or_create() (дедупликация)
 ├── api/
 │   ├── auth.py              ← verify_api_key (X-API-Key, 403)
-│   ├── clients.py           ← APIRouter /clients
-│   └── orders.py            ← APIRouter /orders
-├── migrations/
-│   └── versions/
-│       └── 0001_initial.py  ← clients, orders, order_events + CHECK payload
+│   ├── clients.py
+│   └── orders.py
 ├── tests/
-│   ├── conftest.py          ← SQLite in-memory + патч JSONB→JSON
-│   ├── test_adapters.py     ← 8 тестов (normalize + Security)
-│   ├── test_client_service.py ← 6 тестов (дедупликация, fragile zone HIGH)
-│   └── test_order_service.py  ← 8 тестов (FSM + история)
+│   ├── conftest.py          ← FakeIntegramClient + dependency_override
+│   ├── mocks/
+│   │   └── integram_mock.py ← in-memory имитация Integram
+│   ├── test_adapters.py
+│   ├── test_client_service.py
+│   ├── test_order_service.py
+│   └── test_api_from_source.py
 ├── docs/
-│   └── architecture.md      ← этот файл
+│   ├── architecture.md
+│   └── plan.md
 ├── Dockerfile
 ├── docker-compose.yml
-├── .env.example
 └── requirements.txt
 ```
+
+---
+
+## Переменные окружения (.env)
+
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `SECRET_KEY` | ✅ | Секретный ключ приложения |
+| `API_KEY` | ✅ | X-API-Key для аутентификации |
+| `INTEGRAM_LOGIN` | ✅ | Email аккаунта Integram |
+| `INTEGRAM_PASSWORD` | ✅ | Пароль аккаунта Integram |
+| `INTEGRAM_WORKSPACE` | — | Slug воркспейса (по умолчанию: `beecrm`) |
+| `INTEGRAM_T_EVENTS` | — | typeId child-таблицы OrderEvent (по умолчанию: `37`) |
 
 ---
 
@@ -150,52 +208,39 @@ BEECRM/
 ```
 Интернет
     │
-    ├─▶ http://178.253.39.215:8000  (прямой доступ, временно)
+    ├─▶ http://178.253.39.215:8000  (прямой доступ)
     └─▶ http://api.ai2o.online      (nginx proxy, ждём DNS → потом HTTPS)
-                │
-                ▼
-        nginx → 127.0.0.1:8000
-                │
-                ▼
-        systemd: beecrm.service
-                │
-                ▼
-        uvicorn main:app (ai-agent, ~/BEECRM/.venv)
-                │
-                ▼
-        PostgreSQL 14 (localhost:5432, db: beecrm)
+              │
+              ▼
+      nginx → 127.0.0.1:8000
+              │
+              ▼
+      systemd: beecrm.service
+              │
+              ▼
+      uvicorn main:app (ai-agent, ~/BEECRM/.venv)
+              │
+              ▼
+      Integram API (ai2o.online/beecrm)
 ```
 
 ---
 
-## Открытые блокеры (Security RED)
+## Открытые блокеры
 
-| # | Блокер | Решение | Этап |
-|---|--------|---------|------|
-| 1 | Нет аутентификации — API открыт для всех | `X-API-Key` заголовок | ✅ закрыт |
-| 2 | HTTP, не HTTPS — данные клиентов открытым текстом | nginx готов, ждём DNS api.ai2o.online | ⏳ |
-| 3 | `POST /orders/` не пишет OrderEvent — история неполная | рефактор через `order_service` | ✅ закрыт |
+| # | Блокер | Статус |
+|---|--------|--------|
+| 1 | HTTP, не HTTPS | ⏳ ждём DNS api.ai2o.online → 178.253.39.215 |
 
-## Открытые задачи (не блокируют)
-
-| # | Задача | Этап |
-|---|--------|------|
-| 4 | `GET /orders/{id}/history` и `GET /clients/{id}/history` | 1 |
-| 5 | `POST /orders/from-source` — единая точка входа через адаптер | 4 |
-| 6 | Импорт из Excel / Google Таблицы | 5 |
-| 7 | Уведомления клиентам (Telegram/WhatsApp) | 6 |
-
----
-
-## Fragile Zones (из context.yaml)
+## Fragile Zones
 
 | Зона | Риск | Статус |
 |------|------|--------|
-| `client_dedup` | UDS + мессенджер — один клиент | ✅ реализовано в `client_service.find_or_create()` |
+| `client_dedup` | Дедупликация по phone/email через Integram search | ✅ реализовано |
+| `no_transactions` | Integram не поддерживает ACID | ⚠️ compensating actions |
 | `uds_sync` | Нет официального UDS API | ⏳ не начато |
-| `cdek_address` | Клиенты дают домашний адрес вместо СДЭК | ⏳ не начато |
 | `order_addon` | Дозаказ должен добавляться к существующему | ⏳ не начато |
 
 ---
 
-*Обновлено AgentForge · Scout → Architect → Security · 08.04.2026*
+*Обновлено AgentForge · 08.04.2026*

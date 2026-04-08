@@ -9,6 +9,7 @@ SECRET_KEY: str = ""
 API_KEY: str = ""
 INTEGRAM_LOGIN: str = ""
 INTEGRAM_PASSWORD: str = ""
+INTEGRAM_WORKSPACE: str = "beecrm"
 INTEGRAM_T_EVENTS: int = 0   # ID child-таблицы OrderEvent; 0 = отключено
 
 
@@ -18,9 +19,10 @@ def startup_check() -> None:
     if missing:
         raise ValueError(f"Обязательные переменные не заданы: {', '.join(missing)}")
 
-    global SECRET_KEY, API_KEY, INTEGRAM_LOGIN, INTEGRAM_PASSWORD, INTEGRAM_T_EVENTS
+    global SECRET_KEY, API_KEY, INTEGRAM_LOGIN, INTEGRAM_PASSWORD, INTEGRAM_WORKSPACE, INTEGRAM_T_EVENTS
     SECRET_KEY = os.environ["SECRET_KEY"]
     API_KEY = os.environ["API_KEY"]
     INTEGRAM_LOGIN = os.environ["INTEGRAM_LOGIN"]
     INTEGRAM_PASSWORD = os.environ["INTEGRAM_PASSWORD"]
+    INTEGRAM_WORKSPACE = os.environ.get("INTEGRAM_WORKSPACE", "beecrm")
     INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "0"))

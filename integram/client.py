@@ -16,7 +16,7 @@ class IntegramClient:
 
     T_CLIENTS = 16
     T_ORDERS = 17
-    T_EVENTS = 0   # ID child-таблицы OrderEvent; 0 = отключено до создания таблицы
+    T_EVENTS = 37  # child-таблица "История заказов" (parentTypeId=17)
     T_STATUSES = 14
     T_SOURCES = 15
 
