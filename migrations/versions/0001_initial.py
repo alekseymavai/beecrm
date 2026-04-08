@@ -64,10 +64,10 @@ def upgrade() -> None:
             sa.ForeignKey("clients.id", ondelete="RESTRICT"),
             nullable=False,
         ),
-        sa.Column("source", sa.Enum("UDS", "MESSENGER", "TABLE", name="ordersource", create_type=False), nullable=False),
+        sa.Column("source", postgresql.ENUM("UDS", "MESSENGER", "TABLE", name="ordersource", create_type=False), nullable=False),
         sa.Column(
             "status",
-            sa.Enum("NEW", "CONFIRMED", "IN_PROGRESS", "DONE", "CANCELLED", name="orderstatus", create_type=False),
+            postgresql.ENUM("NEW", "CONFIRMED", "IN_PROGRESS", "DONE", "CANCELLED", name="orderstatus", create_type=False),
             nullable=False,
             server_default="NEW",
         ),
