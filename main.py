@@ -24,6 +24,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="BEECRM", version="0.1.0", lifespan=lifespan)
 
+
+@app.get("/health", tags=["system"])
+async def health():
+    return {"status": "ok"}
+
+
 _auth = [Depends(verify_api_key)]
 app.include_router(clients_router, dependencies=_auth)
 app.include_router(orders_router, dependencies=_auth)
