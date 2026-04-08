@@ -1,14 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 
 from adapters.base import AdapterError
 from adapters.messenger_adapter import MessengerAdapter
 from adapters.table_adapter import TableAdapter
 from adapters.uds_adapter import UDSAdapter
-from db import get_session
-from models.client import Client
-from models.order import Order, OrderSource
-from schemas.order import OrderCreate, OrderEventRead, OrderFromSource, OrderRead, OrderStatusUpdate
+from integram.client import IntegramClient
+from integram.deps import get_integram
+from integram.mappers import igm_to_event, igm_to_order
+from schemas.enums import OrderSource, OrderStatus
+from schemas.order import (
+    OrderCreate,
+    OrderEventRead,
+    OrderFromSource,
+    OrderRead,
+    OrderStatusUpdate,
+)
 from services.client_service import find_or_create
 from services.fsm import FSMError
 from services.order_service import create_order, get_history, transition_status
@@ -23,17 +29,19 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.post("/", response_model=OrderRead, status_code=201)
-def create_order_endpoint(data: OrderCreate, db: Session = Depends(get_session)):
-    if not db.get(Client, data.client_id):
+async def create_order_endpoint(
+    data: OrderCreate, igm: IntegramClient = Depends(get_integram)
+):
+    if not await igm.get_object(igm.T_CLIENTS, data.client_id):
         raise HTTPException(status_code=404, detail="Клиент не найден")
-    order = create_order(db, client_id=data.client_id, source=data.source, payload=data.payload)
-    db.flush()
-    db.refresh(order)
-    return order
+    order = await create_order(igm, client_id=data.client_id, source=data.source, payload=data.payload)
+    return igm_to_order(order)
 
 
 @router.post("/from-source", response_model=OrderRead, status_code=201)
-def create_order_from_source(data: OrderFromSource, db: Session = Depends(get_session)):
+async def create_order_from_source(
+    data: OrderFromSource, igm: IntegramClient = Depends(get_integram)
+):
     # 1. Нормализовать raw через адаптер источника
     adapter = _ADAPTERS[data.source]
     try:
@@ -45,51 +53,58 @@ def create_order_from_source(data: OrderFromSource, db: Session = Depends(get_se
     client_data = data.client
     if not client_data.phone and not client_data.email:
         raise HTTPException(status_code=422, detail="Нужен хотя бы phone или email клиента")
-    client, _ = find_or_create(
-        db,
+    client, _ = await find_or_create(
+        igm,
         phone=client_data.phone,
         email=client_data.email,
         name=client_data.name,
     )
 
     # 3. Создать заказ + OrderEvent
-    order = create_order(db, client_id=client.id, source=data.source, payload=payload)
-    db.flush()
-    db.refresh(order)
-    return order
+    order = await create_order(igm, client_id=client["id"], source=data.source, payload=payload)
+    return igm_to_order(order)
 
 
 @router.get("/", response_model=list[OrderRead])
-def list_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_session)):
-    return db.query(Order).offset(skip).limit(limit).all()
+async def list_orders(
+    skip: int = 0, limit: int = 100, igm: IntegramClient = Depends(get_integram)
+):
+    rows = await igm.list_objects(igm.T_ORDERS, skip=skip, limit=limit)
+    return [igm_to_order(r) for r in rows]
 
 
 @router.get("/{order_id}", response_model=OrderRead)
-def get_order(order_id: int, db: Session = Depends(get_session)):
-    order = db.get(Order, order_id)
-    if not order:
+async def get_order(order_id: int, igm: IntegramClient = Depends(get_integram)):
+    row = await igm.get_object(igm.T_ORDERS, order_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Заказ не найден")
-    return order
+    return igm_to_order(row)
 
 
 @router.get("/{order_id}/history", response_model=list[OrderEventRead])
-def get_order_history(order_id: int, db: Session = Depends(get_session)):
-    if not db.get(Order, order_id):
+async def get_order_history(order_id: int, igm: IntegramClient = Depends(get_integram)):
+    if not await igm.get_object(igm.T_ORDERS, order_id):
         raise HTTPException(status_code=404, detail="Заказ не найден")
-    return get_history(db, order_id)
+    events = await get_history(igm, order_id)
+    return [igm_to_event(e, order_id) for e in events]
 
 
 @router.patch("/{order_id}/status", response_model=OrderRead)
-def update_order_status(
-    order_id: int, data: OrderStatusUpdate, db: Session = Depends(get_session)
+async def update_order_status(
+    order_id: int, data: OrderStatusUpdate, igm: IntegramClient = Depends(get_integram)
 ):
-    order = db.get(Order, order_id)
-    if not order:
+    row = await igm.get_object(igm.T_ORDERS, order_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Заказ не найден")
+    order_dict = igm_to_order(row)
     try:
-        transition_status(db, order, data.status, actor=data.actor, meta=data.meta)
+        updated_raw = await transition_status(
+            igm, order_dict, data.status, actor=data.actor, meta=data.meta
+        )
     except FSMError as e:
         raise HTTPException(status_code=422, detail=str(e))
-    db.flush()
-    db.refresh(order)
-    return order
+    # После update_object Integram возвращает raw dict — нужно дополнить notes из исходного
+    # чтобы mapper смог извлечь source и payload
+    if "notes" not in updated_raw and "notes" in row:
+        updated_raw["notes"] = row["notes"]
+    return igm_to_order(updated_raw)

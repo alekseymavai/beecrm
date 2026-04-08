@@ -1,64 +1,30 @@
-"""conftest.py — фикстуры для тестов (SQLite in-memory)."""
+"""conftest.py — фикстуры для тестов (FakeIntegramClient)."""
 
 import os
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import JSON, create_engine
-from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("API_KEY", "test-api-key")
+os.environ.setdefault("INTEGRAM_LOGIN", "test-login")
+os.environ.setdefault("INTEGRAM_PASSWORD", "test-password")
 
-# SQLite не знает JSONB — патчим компилятор чтобы рендерил как JSON
-SQLiteTypeCompiler.visit_JSONB = SQLiteTypeCompiler.visit_JSON  # type: ignore
-
-from db import Base, get_session
-from main import app
-
-TEST_DB_URL = "sqlite:///:memory:"
-
-
-@pytest.fixture(scope="session")
-def engine():
-    eng = create_engine(
-        TEST_DB_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(eng)
-    yield eng
-    eng.dispose()
+from integram.deps import get_integram  # noqa: E402
+from main import app  # noqa: E402
+from tests.mocks.integram_mock import FakeIntegramClient  # noqa: E402
 
 
 @pytest.fixture
-def db(engine):
-    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    session = Session()
-    yield session
-    session.rollback()
-    session.close()
+def igm():
+    return FakeIntegramClient()
 
 
 @pytest.fixture
-def client(engine):
-    Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-    def override_session():
-        session = Session()
-        try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-    app.dependency_overrides[get_session] = override_session
-    with TestClient(app) as c:
-        yield c
+def client(igm):
+    app.dependency_overrides[get_integram] = lambda: igm
+    with patch("main.IntegramClient.authenticate", new=AsyncMock(return_value=igm)):
+        with TestClient(app) as c:
+            yield c
     app.dependency_overrides.clear()

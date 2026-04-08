@@ -6,58 +6,61 @@ find_or_create() — fragile zone HIGH:
   Если нашли — обновляем недостающие поля, не создаём дубль.
 """
 
-from sqlalchemy.orm import Session
-
-from models.client import Client
+from integram.client import IntegramClient
 
 
-def find_or_create(
-    db: Session,
+async def find_or_create(
+    igm: IntegramClient,
     phone: str | None = None,
     email: str | None = None,
     name: str | None = None,
-) -> tuple[Client, bool]:
+) -> tuple[dict, bool]:
     """Найти клиента по phone или email, иначе создать.
 
     Returns:
-        (client, created) — created=True если новый клиент
+        (client_dict, created) — created=True если новый клиент
     """
     if not phone and not email:
         raise ValueError("Нужен хотя бы phone или email")
 
     client = None
 
-    # Ищем по phone (приоритет — phone уникальнее email)
     if phone:
-        client = db.query(Client).filter(Client.phone == phone).first()
+        client = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_PHONE, phone)
 
-    # Ищем по email если по phone не нашли
     if not client and email:
-        client = db.query(Client).filter(Client.email == email).first()
+        client = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_EMAIL, email)
 
     if client:
-        # Дополняем недостающие поля
-        if phone and not client.phone:
-            client.phone = phone
-        if email and not client.email:
-            client.email = email
-        if name and not client.name:
-            client.name = name
+        updates: dict = {}
+        if phone and not client.get("phone"):
+            updates["phone"] = phone
+        if email and not client.get("email"):
+            updates["email"] = email
+        if name and not client.get("name"):
+            updates["name"] = name
+        if updates:
+            client = await igm.update_object(igm.T_CLIENTS, client["id"], updates)
         return client, False
 
-    # Создаём нового
-    client = Client(phone=phone, email=email, name=name)
-    db.add(client)
-    db.flush()
+    fields: dict = {}
+    if phone:
+        fields["phone"] = phone
+    if email:
+        fields["email"] = email
+    if name:
+        fields["name"] = name
+    client = await igm.create_object(igm.T_CLIENTS, fields)
     return client, True
 
 
-def get_history(db: Session, client_id: int) -> list:
+async def get_history(igm: IntegramClient, client_id: int) -> list[dict]:
     """История заказов клиента."""
-    from models.order import Order
-    return (
-        db.query(Order)
-        .filter(Order.client_id == client_id)
-        .order_by(Order.created_at.desc())
-        .all()
-    )
+    orders = await igm.list_objects(igm.T_ORDERS, limit=100)
+    result = []
+    for order in orders:
+        ref = order.get("client")
+        cid = ref["id"] if isinstance(ref, dict) else ref
+        if cid == client_id:
+            result.append(order)
+    return result

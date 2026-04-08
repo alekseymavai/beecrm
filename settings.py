@@ -1,23 +1,26 @@
 import os
 
-# Единственный источник лимита payload — импортируется в схемы и миграцию
+# Единственный источник лимита payload — импортируется в схемы и адаптеры
 MAX_PAYLOAD_BYTES: int = 65536
 
-REQUIRED_VARS = ("DB_URL", "SECRET_KEY", "API_KEY")
+REQUIRED_VARS = ("SECRET_KEY", "API_KEY", "INTEGRAM_LOGIN", "INTEGRAM_PASSWORD")
 
-# Секреты — только os.environ[KEY], никаких .get(KEY, default)
-DB_URL: str = os.environ.get("DB_URL", "")        # заполняется после startup_check()
-SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
-API_KEY: str = os.environ.get("API_KEY", "")
+SECRET_KEY: str = ""
+API_KEY: str = ""
+INTEGRAM_LOGIN: str = ""
+INTEGRAM_PASSWORD: str = ""
+INTEGRAM_T_EVENTS: int = 0   # ID child-таблицы OrderEvent; 0 = отключено
 
 
 def startup_check() -> None:
-    """Вызывать при старте приложения. KeyError если обязательная переменная не задана."""
+    """Вызывать при старте приложения. ValueError если обязательная переменная не задана."""
     missing = [key for key in REQUIRED_VARS if key not in os.environ]
     if missing:
         raise ValueError(f"Обязательные переменные не заданы: {', '.join(missing)}")
 
-    global DB_URL, SECRET_KEY, API_KEY
-    DB_URL = os.environ["DB_URL"]
+    global SECRET_KEY, API_KEY, INTEGRAM_LOGIN, INTEGRAM_PASSWORD, INTEGRAM_T_EVENTS
     SECRET_KEY = os.environ["SECRET_KEY"]
     API_KEY = os.environ["API_KEY"]
+    INTEGRAM_LOGIN = os.environ["INTEGRAM_LOGIN"]
+    INTEGRAM_PASSWORD = os.environ["INTEGRAM_PASSWORD"]
+    INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "0"))

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
-from models.order import OrderSource, OrderStatus
+from schemas.enums import OrderSource, OrderStatus
 
 
 class OrderCreate(BaseModel):
@@ -22,14 +22,12 @@ class OrderCreate(BaseModel):
 
 class OrderRead(BaseModel):
     id: int
-    client_id: int
+    client_id: int | None
     source: OrderSource
     status: OrderStatus
     payload: dict
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class ClientInfo(BaseModel):
@@ -63,5 +61,3 @@ class OrderEventRead(BaseModel):
     actor: str | None
     meta: dict | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}

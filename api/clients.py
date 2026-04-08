@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 
-from db import get_session
-from models.client import Client
+from integram.client import IntegramClient
+from integram.deps import get_integram
+from integram.mappers import igm_to_client, igm_to_order
 from schemas.client import ClientCreate, ClientRead, ClientUpdate
 from schemas.order import OrderRead
 from services.client_service import get_history
@@ -11,41 +11,49 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 
 
 @router.post("/", response_model=ClientRead, status_code=201)
-def create_client(data: ClientCreate, db: Session = Depends(get_session)):
-    client = Client(**data.model_dump())
-    db.add(client)
-    db.flush()
-    db.refresh(client)
-    return client
+async def create_client(
+    data: ClientCreate, igm: IntegramClient = Depends(get_integram)
+):
+    fields = {k: v for k, v in data.model_dump().items() if v is not None}
+    row = await igm.create_object(igm.T_CLIENTS, fields)
+    return igm_to_client(row)
 
 
 @router.get("/", response_model=list[ClientRead])
-def list_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_session)):
-    return db.query(Client).offset(skip).limit(limit).all()
+async def list_clients(
+    skip: int = 0, limit: int = 100, igm: IntegramClient = Depends(get_integram)
+):
+    rows = await igm.list_objects(igm.T_CLIENTS, skip=skip, limit=limit)
+    return [igm_to_client(r) for r in rows]
 
 
 @router.get("/{client_id}", response_model=ClientRead)
-def get_client(client_id: int, db: Session = Depends(get_session)):
-    client = db.get(Client, client_id)
-    if not client:
+async def get_client(client_id: int, igm: IntegramClient = Depends(get_integram)):
+    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
-    return client
+    return igm_to_client(row)
 
 
 @router.patch("/{client_id}", response_model=ClientRead)
-def update_client(client_id: int, data: ClientUpdate, db: Session = Depends(get_session)):
-    client = db.get(Client, client_id)
-    if not client:
+async def update_client(
+    client_id: int, data: ClientUpdate, igm: IntegramClient = Depends(get_integram)
+):
+    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
-    for field, value in data.model_dump(exclude_none=True).items():
-        setattr(client, field, value)
-    db.flush()
-    db.refresh(client)
-    return client
+    fields = data.model_dump(exclude_none=True)
+    if fields:
+        row = await igm.update_object(igm.T_CLIENTS, client_id, fields)
+    return igm_to_client(row)
 
 
 @router.get("/{client_id}/history", response_model=list[OrderRead])
-def get_client_history(client_id: int, db: Session = Depends(get_session)):
-    if not db.get(Client, client_id):
+async def get_client_history(
+    client_id: int, igm: IntegramClient = Depends(get_integram)
+):
+    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
-    return get_history(db, client_id)
+    orders = await get_history(igm, client_id)
+    return [igm_to_order(o) for o in orders]

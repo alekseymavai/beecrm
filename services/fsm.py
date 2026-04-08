@@ -7,10 +7,13 @@
   DONE / CANCELLED — финальные, переходов нет
 """
 
-from sqlalchemy.orm import Session
+import json
+import logging
 
-from models.order import Order, OrderStatus
-from models.order_event import OrderEvent
+from integram.client import IntegramClient
+from schemas.enums import OrderStatus
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     OrderStatus.NEW: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
@@ -25,29 +28,40 @@ class FSMError(Exception):
     pass
 
 
-def transition(
-    db: Session,
-    order: Order,
+async def transition(
+    igm: IntegramClient,
+    order: dict,
     new_status: OrderStatus,
     actor: str | None = None,
     meta: dict | None = None,
-) -> Order:
-    """Сменить статус заказа и записать событие в order_events."""
-    allowed = ALLOWED_TRANSITIONS.get(order.status, set())
+) -> dict:
+    """Сменить статус заказа и записать событие.
+
+    order — dict из igm_to_order (human-readable status).
+    Возвращает raw Integram dict (до маппинга).
+    """
+    current = OrderStatus(order["status"])
+    allowed = ALLOWED_TRANSITIONS.get(current, set())
     if new_status not in allowed:
         raise FSMError(
-            f"Переход {order.status} → {new_status} недопустим. "
+            f"Переход {current} → {new_status} недопустим. "
             f"Разрешены: {[s.value for s in allowed] or 'нет (финальный статус)'}"
         )
 
-    event = OrderEvent(
-        order_id=order.id,
-        from_status=order.status,
-        to_status=new_status,
-        actor=actor,
-        meta=meta,
-    )
-    db.add(event)
+    if igm.T_EVENTS:
+        try:
+            await igm.create_object(
+                igm.T_EVENTS,
+                {
+                    "from_status": current.value,
+                    "to_status": new_status.value,
+                    "actor": actor or "",
+                    "meta": json.dumps(meta) if meta else "null",
+                },
+                parentId=order["id"],
+            )
+        except Exception as exc:
+            logger.warning("OrderEvent failed (order %d): %s", order["id"], exc)
 
-    order.status = new_status
-    return order
+    status_id = igm.STATUS_MAP[new_status.value]
+    return await igm.update_object(igm.T_ORDERS, order["id"], {"status": status_id})

@@ -1,58 +1,60 @@
 """test_order_service.py — FSM переходы заказа."""
 
 import pytest
-from models.order import OrderSource, OrderStatus
+from schemas.enums import OrderSource, OrderStatus
 from services.client_service import find_or_create
 from services.fsm import FSMError
-from services.order_service import create_order, transition_status, get_history
+from services.order_service import create_order, get_history, transition_status
+from integram.mappers import igm_to_order
 
 
 @pytest.fixture
-def order(db):
-    client, _ = find_or_create(db, phone="+79005555555")
-    return create_order(db, client_id=client.id, source=OrderSource.MESSENGER)
+async def order(igm):
+    client, _ = await find_or_create(igm, phone="+79005555555")
+    raw = await create_order(igm, client_id=client["id"], source=OrderSource.MESSENGER)
+    return igm_to_order(raw)
 
 
 class TestFSM:
     def test_new_order_status(self, order):
-        assert order.status == OrderStatus.NEW
+        assert order["status"] == "NEW"
 
-    def test_new_to_confirmed(self, db, order):
-        transition_status(db, order, OrderStatus.CONFIRMED, actor="manager")
-        assert order.status == OrderStatus.CONFIRMED
+    async def test_new_to_confirmed(self, igm, order):
+        raw = await transition_status(igm, order, OrderStatus.CONFIRMED, actor="manager")
+        assert igm_to_order(raw)["status"] == "CONFIRMED"
 
-    def test_confirmed_to_in_progress(self, db, order):
-        transition_status(db, order, OrderStatus.CONFIRMED)
-        transition_status(db, order, OrderStatus.IN_PROGRESS)
-        assert order.status == OrderStatus.IN_PROGRESS
+    async def test_confirmed_to_in_progress(self, igm, order):
+        o = igm_to_order(await transition_status(igm, order, OrderStatus.CONFIRMED))
+        o2 = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
+        assert o2["status"] == "IN_PROGRESS"
 
-    def test_in_progress_to_done(self, db, order):
-        transition_status(db, order, OrderStatus.CONFIRMED)
-        transition_status(db, order, OrderStatus.IN_PROGRESS)
-        transition_status(db, order, OrderStatus.DONE)
-        assert order.status == OrderStatus.DONE
+    async def test_in_progress_to_done(self, igm, order):
+        o = igm_to_order(await transition_status(igm, order, OrderStatus.CONFIRMED))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.DONE))
+        assert o["status"] == "DONE"
 
-    def test_cancel_from_new(self, db, order):
-        transition_status(db, order, OrderStatus.CANCELLED)
-        assert order.status == OrderStatus.CANCELLED
+    async def test_cancel_from_new(self, igm, order):
+        o = igm_to_order(await transition_status(igm, order, OrderStatus.CANCELLED))
+        assert o["status"] == "CANCELLED"
 
-    def test_forbidden_new_to_done(self, db, order):
+    async def test_forbidden_new_to_done(self, igm, order):
         with pytest.raises(FSMError):
-            transition_status(db, order, OrderStatus.DONE)
+            await transition_status(igm, order, OrderStatus.DONE)
 
-    def test_forbidden_done_to_any(self, db, order):
-        transition_status(db, order, OrderStatus.CONFIRMED)
-        transition_status(db, order, OrderStatus.IN_PROGRESS)
-        transition_status(db, order, OrderStatus.DONE)
+    async def test_forbidden_done_to_any(self, igm, order):
+        o = igm_to_order(await transition_status(igm, order, OrderStatus.CONFIRMED))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.DONE))
         with pytest.raises(FSMError):
-            transition_status(db, order, OrderStatus.CANCELLED)
+            await transition_status(igm, o, OrderStatus.CANCELLED)
 
-    def test_history_recorded(self, db, order):
-        transition_status(db, order, OrderStatus.CONFIRMED, actor="ivan")
-        db.flush()
-        history = get_history(db, order.id)
-        # создание + переход
+    async def test_history_recorded(self, igm, order):
+        await transition_status(igm, order, OrderStatus.CONFIRMED, actor="ivan")
+        history = await get_history(igm, order["id"])
+        # FakeIntegramClient.T_EVENTS = 999 → события включены
+        # создание заказа + переход CONFIRMED
         assert len(history) == 2
-        assert history[0].to_status == OrderStatus.NEW
-        assert history[1].to_status == OrderStatus.CONFIRMED
-        assert history[1].actor == "ivan"
+        assert history[0]["to_status"] == "NEW"
+        assert history[1]["to_status"] == "CONFIRMED"
+        assert history[1]["actor"] == "ivan"
