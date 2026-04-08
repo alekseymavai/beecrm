@@ -1,12 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from adapters.base import AdapterError
+from adapters.messenger_adapter import MessengerAdapter
+from adapters.table_adapter import TableAdapter
+from adapters.uds_adapter import UDSAdapter
 from db import get_session
 from models.client import Client
-from models.order import Order
-from schemas.order import OrderCreate, OrderEventRead, OrderRead, OrderStatusUpdate
+from models.order import Order, OrderSource
+from schemas.order import OrderCreate, OrderEventRead, OrderFromSource, OrderRead, OrderStatusUpdate
+from services.client_service import find_or_create
 from services.fsm import FSMError
 from services.order_service import create_order, get_history, transition_status
+
+_ADAPTERS = {
+    OrderSource.UDS: UDSAdapter(),
+    OrderSource.MESSENGER: MessengerAdapter(),
+    OrderSource.TABLE: TableAdapter(),
+}
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -16,6 +27,33 @@ def create_order_endpoint(data: OrderCreate, db: Session = Depends(get_session))
     if not db.get(Client, data.client_id):
         raise HTTPException(status_code=404, detail="Клиент не найден")
     order = create_order(db, client_id=data.client_id, source=data.source, payload=data.payload)
+    db.flush()
+    db.refresh(order)
+    return order
+
+
+@router.post("/from-source", response_model=OrderRead, status_code=201)
+def create_order_from_source(data: OrderFromSource, db: Session = Depends(get_session)):
+    # 1. Нормализовать raw через адаптер источника
+    adapter = _ADAPTERS[data.source]
+    try:
+        payload = adapter.normalize(data.raw)
+    except AdapterError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    # 2. Найти или создать клиента (дедупликация)
+    client_data = data.client
+    if not client_data.phone and not client_data.email:
+        raise HTTPException(status_code=422, detail="Нужен хотя бы phone или email клиента")
+    client, _ = find_or_create(
+        db,
+        phone=client_data.phone,
+        email=client_data.email,
+        name=client_data.name,
+    )
+
+    # 3. Создать заказ + OrderEvent
+    order = create_order(db, client_id=client.id, source=data.source, payload=payload)
     db.flush()
     db.refresh(order)
     return order

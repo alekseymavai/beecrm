@@ -7,6 +7,7 @@ from sqlalchemy import JSON, create_engine
 from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret")
@@ -23,7 +24,11 @@ TEST_DB_URL = "sqlite:///:memory:"
 
 @pytest.fixture(scope="session")
 def engine():
-    eng = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+    eng = create_engine(
+        TEST_DB_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(eng)
     yield eng
     eng.dispose()

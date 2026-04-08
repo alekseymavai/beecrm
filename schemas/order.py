@@ -32,6 +32,23 @@ class OrderRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ClientInfo(BaseModel):
+    """Данные клиента для find_or_create."""
+    phone: str | None = None
+    email: str | None = None
+    name: str | None = None
+
+
+class OrderFromSource(BaseModel):
+    """Принять заказ из источника — один запрос вместо двух.
+
+    raw проходит через адаптер источника перед записью в payload.
+    """
+    source: OrderSource
+    client: ClientInfo
+    raw: dict = {}
+
+
 class OrderStatusUpdate(BaseModel):
     status: OrderStatus
     actor: str | None = None
