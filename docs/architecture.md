@@ -124,8 +124,9 @@ BEECRM/
 │   ├── order_service.py     ← create_order(), transition_status(), get_history()
 │   └── client_service.py    ← find_or_create() (дедупликация), get_history()
 ├── api/
+│   ├── auth.py              ← verify_api_key (X-API-Key, 403)
 │   ├── clients.py           ← APIRouter /clients
-│   └── orders.py            ← APIRouter /orders  ⚠️ требует рефактора
+│   └── orders.py            ← APIRouter /orders
 ├── migrations/
 │   └── versions/
 │       └── 0001_initial.py  ← clients, orders, order_events + CHECK payload
@@ -149,17 +150,20 @@ BEECRM/
 ```
 Интернет
     │
-    ▼ порт 8000 (HTTP — временно, нужен HTTPS)
-vm4115781.firstbyte.club (178.253.39.215)
-    │
-    ▼
-systemd: beecrm.service
-    │
-    ▼
-uvicorn main:app (ai-agent, ~/BEECRM/.venv)
-    │
-    ▼
-PostgreSQL 14 (localhost:5432, db: beecrm)
+    ├─▶ http://178.253.39.215:8000  (прямой доступ, временно)
+    └─▶ http://api.ai2o.online      (nginx proxy, ждём DNS → потом HTTPS)
+                │
+                ▼
+        nginx → 127.0.0.1:8000
+                │
+                ▼
+        systemd: beecrm.service
+                │
+                ▼
+        uvicorn main:app (ai-agent, ~/BEECRM/.venv)
+                │
+                ▼
+        PostgreSQL 14 (localhost:5432, db: beecrm)
 ```
 
 ---
@@ -168,9 +172,9 @@ PostgreSQL 14 (localhost:5432, db: beecrm)
 
 | # | Блокер | Решение | Этап |
 |---|--------|---------|------|
-| 1 | Нет аутентификации — API открыт для всех | `X-API-Key` заголовок | 2 |
-| 2 | HTTP, не HTTPS — данные клиентов открытым текстом | nginx + Let's Encrypt | 3 |
-| 3 | `POST /orders/` не пишет OrderEvent — история неполная | рефактор через `order_service` | 1 |
+| 1 | Нет аутентификации — API открыт для всех | `X-API-Key` заголовок | ✅ закрыт |
+| 2 | HTTP, не HTTPS — данные клиентов открытым текстом | nginx готов, ждём DNS api.ai2o.online | ⏳ |
+| 3 | `POST /orders/` не пишет OrderEvent — история неполная | рефактор через `order_service` | ✅ закрыт |
 
 ## Открытые задачи (не блокируют)
 
