@@ -19,47 +19,63 @@ def _now_iso() -> str:
 
 
 def igm_to_client(row: dict) -> dict:
-    created_at = row.get("created_at") or _now_iso()
+    req = row.get("requisites") or {}
+    created_at = row.get("createdAt") or row.get("created_at") or _now_iso()
+    phone = req.get(str(IntegramClient.COL_CLIENT_PHONE)) or None
+    email = req.get(str(IntegramClient.COL_CLIENT_EMAIL)) or None
     return {
         "id": row["id"],
-        "name": row.get("name"),
-        "phone": row.get("phone"),
-        "email": row.get("email"),
+        "name": row.get("value") or None,
+        "phone": phone,
+        "email": email,
         "created_at": created_at,
-        "updated_at": created_at,
+        "updated_at": row.get("updatedAt") or row.get("updated_at") or created_at,
     }
 
 
 def igm_to_order(row: dict) -> dict:
-    notes_str = row.get("notes") or "{}"
+    req = row.get("requisites") or {}
+
+    notes_str = req.get(str(IntegramClient.COL_ORDER_NOTES)) or "{}"
     try:
         notes = json.loads(notes_str)
     except (json.JSONDecodeError, TypeError):
         notes = {}
 
-    status_ref = _extract_ref(row.get("status"))
+    status_raw = req.get(str(IntegramClient.COL_ORDER_STATUS))
+    status_ref = int(status_raw) if status_raw is not None and status_raw != "" else None
     status_str = _REVERSE_STATUS.get(status_ref, "NEW") if status_ref else "NEW"
 
-    created_at = row.get("created_at") or _now_iso()
+    client_raw = req.get(str(IntegramClient.COL_ORDER_CLIENT))
+    client_id = int(client_raw) if client_raw else _extract_ref(row.get("client"))
+
+    created_at = (
+        req.get(str(IntegramClient.COL_ORDER_CREATED_AT))
+        or row.get("createdAt")
+        or row.get("created_at")
+        or _now_iso()
+    )
     return {
         "id": row["id"],
-        "client_id": _extract_ref(row.get("client")),
+        "client_id": client_id,
         "source": notes.get("source", "MESSENGER"),
         "status": status_str,
         "payload": notes.get("payload", {}),
         "created_at": created_at,
-        "updated_at": created_at,
+        "updated_at": row.get("updatedAt") or row.get("updated_at") or created_at,
     }
 
 
 def igm_to_event(row: dict, order_id: int) -> dict:
-    meta_str = row.get("meta") or "null"
+    req = row.get("requisites") or {}
+
+    meta_str = req.get(str(IntegramClient.COL_EVENT_META)) or "null"
     try:
         meta = json.loads(meta_str)
     except (json.JSONDecodeError, TypeError):
         meta = None
 
-    from_status = row.get("from_status") or None
+    from_status = req.get(str(IntegramClient.COL_EVENT_FROM)) or None
     if from_status == "":
         from_status = None
 
@@ -67,8 +83,13 @@ def igm_to_event(row: dict, order_id: int) -> dict:
         "id": row["id"],
         "order_id": order_id,
         "from_status": from_status,
-        "to_status": row.get("to_status", "NEW"),
-        "actor": row.get("actor") or None,
+        "to_status": req.get(str(IntegramClient.COL_EVENT_TO), "NEW"),
+        "actor": req.get(str(IntegramClient.COL_EVENT_ACTOR)) or None,
         "meta": meta,
-        "created_at": row.get("created_at") or _now_iso(),
+        "created_at": (
+            req.get(str(IntegramClient.COL_EVENT_TIME))
+            or row.get("createdAt")
+            or row.get("created_at")
+            or _now_iso()
+        ),
     }

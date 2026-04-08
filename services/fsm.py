@@ -52,11 +52,12 @@ async def transition(
         try:
             await igm.create_object(
                 igm.T_EVENTS,
-                {
-                    "from_status": current.value,
-                    "to_status": new_status.value,
-                    "actor": actor or "",
-                    "meta": json.dumps(meta) if meta else "null",
+                value="",
+                requisites={
+                    str(igm.COL_EVENT_FROM): current.value,
+                    str(igm.COL_EVENT_TO): new_status.value,
+                    str(igm.COL_EVENT_ACTOR): actor or "",
+                    str(igm.COL_EVENT_META): json.dumps(meta) if meta else "null",
                 },
                 parentId=order["id"],
             )
@@ -64,4 +65,7 @@ async def transition(
             logger.warning("OrderEvent failed (order %d): %s", order["id"], exc)
 
     status_id = igm.STATUS_MAP[new_status.value]
-    return await igm.update_object(igm.T_ORDERS, order["id"], {"status": status_id})
+    return await igm.update_object(
+        order["id"],
+        requisites={str(igm.COL_ORDER_STATUS): status_id},
+    )

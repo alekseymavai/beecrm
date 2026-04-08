@@ -14,22 +14,27 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 async def create_client(
     data: ClientCreate, igm: IntegramClient = Depends(get_integram)
 ):
-    fields = {k: v for k, v in data.model_dump().items() if v is not None}
-    row = await igm.create_object(igm.T_CLIENTS, fields)
+    d = data.model_dump()
+    requisites = {}
+    if d.get("phone"):
+        requisites[str(igm.COL_CLIENT_PHONE)] = d["phone"]
+    if d.get("email"):
+        requisites[str(igm.COL_CLIENT_EMAIL)] = d["email"]
+    row = await igm.create_object(igm.T_CLIENTS, value=d.get("name") or "", requisites=requisites)
     return igm_to_client(row)
 
 
 @router.get("/", response_model=list[ClientRead])
 async def list_clients(
-    skip: int = 0, limit: int = 100, igm: IntegramClient = Depends(get_integram)
+    page: int = 1, page_size: int = 100, igm: IntegramClient = Depends(get_integram)
 ):
-    rows = await igm.list_objects(igm.T_CLIENTS, skip=skip, limit=limit)
+    rows = await igm.list_objects(igm.T_CLIENTS, page=page, page_size=page_size)
     return [igm_to_client(r) for r in rows]
 
 
 @router.get("/{client_id}", response_model=ClientRead)
 async def get_client(client_id: int, igm: IntegramClient = Depends(get_integram)):
-    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    row = await igm.get_object(client_id)
     if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
     return igm_to_client(row)
@@ -39,12 +44,21 @@ async def get_client(client_id: int, igm: IntegramClient = Depends(get_integram)
 async def update_client(
     client_id: int, data: ClientUpdate, igm: IntegramClient = Depends(get_integram)
 ):
-    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    row = await igm.get_object(client_id)
     if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
-    fields = data.model_dump(exclude_none=True)
-    if fields:
-        row = await igm.update_object(igm.T_CLIENTS, client_id, fields)
+    d = data.model_dump(exclude_none=True)
+    if d:
+        requisites = {}
+        if "phone" in d:
+            requisites[str(igm.COL_CLIENT_PHONE)] = d["phone"]
+        if "email" in d:
+            requisites[str(igm.COL_CLIENT_EMAIL)] = d["email"]
+        row = await igm.update_object(
+            client_id,
+            value=d.get("name"),
+            requisites=requisites or None,
+        )
     return igm_to_client(row)
 
 
@@ -52,7 +66,7 @@ async def update_client(
 async def get_client_history(
     client_id: int, igm: IntegramClient = Depends(get_integram)
 ):
-    row = await igm.get_object(igm.T_CLIENTS, client_id)
+    row = await igm.get_object(client_id)
     if not row:
         raise HTTPException(status_code=404, detail="Клиент не найден")
     orders = await get_history(igm, client_id)

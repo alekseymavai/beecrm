@@ -7,6 +7,7 @@ find_or_create() — fragile zone HIGH:
 """
 
 from integram.client import IntegramClient
+from integram.mappers import igm_to_client
 
 
 async def find_or_create(
@@ -18,49 +19,56 @@ async def find_or_create(
     """Найти клиента по phone или email, иначе создать.
 
     Returns:
-        (client_dict, created) — created=True если новый клиент
+        (client_dict, created) — created=True если новый клиент. client_dict — mapped dict.
     """
     if not phone and not email:
         raise ValueError("Нужен хотя бы phone или email")
 
-    client = None
+    raw = None
 
     if phone:
-        client = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_PHONE, phone)
+        raw = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_PHONE, phone)
 
-    if not client and email:
-        client = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_EMAIL, email)
+    if not raw and email:
+        raw = await igm.find_by_field(igm.T_CLIENTS, igm.COL_CLIENT_EMAIL, email)
 
-    if client:
-        updates: dict = {}
-        if phone and not client.get("phone"):
-            updates["phone"] = phone
-        if email and not client.get("email"):
-            updates["email"] = email
-        if name and not client.get("name"):
-            updates["name"] = name
-        if updates:
-            client = await igm.update_object(igm.T_CLIENTS, client["id"], updates)
-        return client, False
+    if raw:
+        req = raw.get("requisites") or {}
+        new_req: dict = {}
+        new_value: str | None = None
 
-    fields: dict = {}
+        if phone and not req.get(str(igm.COL_CLIENT_PHONE)):
+            new_req[str(igm.COL_CLIENT_PHONE)] = phone
+        if email and not req.get(str(igm.COL_CLIENT_EMAIL)):
+            new_req[str(igm.COL_CLIENT_EMAIL)] = email
+        if name and not raw.get("value"):
+            new_value = name
+
+        if new_req or new_value is not None:
+            raw = await igm.update_object(
+                raw["id"],
+                value=new_value,
+                requisites=new_req or None,
+            )
+        return igm_to_client(raw), False
+
+    requisites: dict = {}
     if phone:
-        fields["phone"] = phone
+        requisites[str(igm.COL_CLIENT_PHONE)] = phone
     if email:
-        fields["email"] = email
-    if name:
-        fields["name"] = name
-    client = await igm.create_object(igm.T_CLIENTS, fields)
-    return client, True
+        requisites[str(igm.COL_CLIENT_EMAIL)] = email
+    raw = await igm.create_object(igm.T_CLIENTS, value=name or "", requisites=requisites)
+    return igm_to_client(raw), True
 
 
 async def get_history(igm: IntegramClient, client_id: int) -> list[dict]:
     """История заказов клиента."""
-    orders = await igm.list_objects(igm.T_ORDERS, limit=100)
+    orders = await igm.list_objects(igm.T_ORDERS, page_size=100)
     result = []
     for order in orders:
-        ref = order.get("client")
-        cid = ref["id"] if isinstance(ref, dict) else ref
+        req = order.get("requisites") or {}
+        cid_raw = req.get(str(igm.COL_ORDER_CLIENT))
+        cid = int(cid_raw) if cid_raw is not None else None
         if cid == client_id:
             result.append(order)
     return result

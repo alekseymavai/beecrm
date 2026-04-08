@@ -15,7 +15,7 @@ class FakeIntegramClient:
 
     STATUS_MAP = {
         "NEW": 18,
-        "CONFIRMED": 36,
+        "CONFIRMED": 190,
         "IN_PROGRESS": 19,
         "DONE": 20,
         "CANCELLED": 21,
@@ -31,21 +31,15 @@ class FakeIntegramClient:
     COL_CLIENT_EMAIL = 29
     COL_ORDER_CLIENT = 30
     COL_ORDER_STATUS = 31
+    COL_ORDER_SOURCE = 32
     COL_ORDER_AMOUNT = 33
     COL_ORDER_NOTES = 34
     COL_ORDER_CREATED_AT = 35
-
-    # col_id → field name для find_by_field
-    _COL_TO_FIELD: dict[int, str] = {
-        27: "notes",
-        28: "phone",
-        29: "email",
-        30: "client",
-        31: "status",
-        33: "amount",
-        34: "notes",
-        35: "created_at",
-    }
+    COL_EVENT_FROM = 38
+    COL_EVENT_TO = 39
+    COL_EVENT_ACTOR = 40
+    COL_EVENT_META = 41
+    COL_EVENT_TIME = 42
 
     def __init__(self) -> None:
         self._stores: dict[int, dict[int, dict]] = {}
@@ -60,16 +54,26 @@ class FakeIntegramClient:
             self._stores[typeId] = {}
         return self._stores[typeId]
 
-    async def get_object(self, typeId: int, objId: int) -> dict | None:
-        return self._store(typeId).get(objId)
+    async def get_object(self, objId: int) -> dict | None:
+        for store in self._stores.values():
+            if objId in store:
+                return store[objId]
+        return None
 
-    async def list_objects(self, typeId: int, skip: int = 0, limit: int = 20) -> list[dict]:
-        rows = list(self._store(typeId).values())
-        return rows[skip : skip + limit]
-
-    async def list_children(
-        self, parent_typeId: int, parent_id: int, child_typeId: int
+    async def list_objects(
+        self,
+        typeId: int,
+        page: int = 1,
+        page_size: int = 50,
+        parent_id: int | None = None,
     ) -> list[dict]:
+        rows = list(self._store(typeId).values())
+        if parent_id is not None:
+            rows = [r for r in rows if r.get("_parentId") == parent_id]
+        start = (page - 1) * page_size
+        return rows[start : start + page_size]
+
+    async def list_children(self, child_typeId: int, parent_id: int) -> list[dict]:
         return [
             obj
             for obj in self._store(child_typeId).values()
@@ -77,28 +81,45 @@ class FakeIntegramClient:
         ]
 
     async def create_object(
-        self, typeId: int, fields: dict, parentId: int | None = None
+        self,
+        typeId: int,
+        value: str = "",
+        requisites: dict[str, Any] | None = None,
+        parentId: int = 1,
     ) -> dict:
         obj_id = self._next_id()
-        obj: dict[str, Any] = {"id": obj_id, **fields}
-        if parentId is not None:
+        obj: dict[str, Any] = {
+            "id": obj_id,
+            "value": value,
+            "typeId": typeId,
+            "parentId": parentId,
+            "requisites": dict(requisites) if requisites else {},
+        }
+        if parentId and parentId != 1:
             obj["_parentId"] = parentId
         self._store(typeId)[obj_id] = obj
         return obj
 
-    async def update_object(self, typeId: int, objId: int, fields: dict) -> dict:
-        store = self._store(typeId)
-        if objId not in store:
-            raise KeyError(f"Object {typeId}/{objId} not found")
-        store[objId].update(fields)
-        return store[objId]
+    async def update_object(
+        self,
+        objId: int,
+        value: str | None = None,
+        requisites: dict[str, Any] | None = None,
+    ) -> dict:
+        for store in self._stores.values():
+            if objId in store:
+                obj = store[objId]
+                if value is not None:
+                    obj["value"] = value
+                if requisites:
+                    obj["requisites"] = {**obj.get("requisites", {}), **requisites}
+                return obj
+        raise KeyError(f"Object {objId} not found")
 
     async def find_by_field(self, typeId: int, col_id: int, value: str) -> dict | None:
-        field = self._COL_TO_FIELD.get(col_id)
-        if not field:
-            return None
         for obj in self._store(typeId).values():
-            if obj.get(field) == value:
+            req = obj.get("requisites") or {}
+            if req.get(str(col_id)) == value:
                 return obj
         return None
 
@@ -113,16 +134,23 @@ class FakeIntegramClient:
         notes = json.dumps({"source": source, "payload": payload}, ensure_ascii=False)
         order = await self.create_object(
             self.T_ORDERS,
-            {"client": client_id, "status": status_id, "notes": notes},
+            value="",
+            requisites={
+                str(self.COL_ORDER_CLIENT): client_id,
+                str(self.COL_ORDER_STATUS): status_id,
+                str(self.COL_ORDER_SOURCE): self.SOURCE_MAP.get(source, 0),
+                str(self.COL_ORDER_NOTES): notes,
+            },
         )
         if self.T_EVENTS:
             await self.create_object(
                 self.T_EVENTS,
-                {
-                    "from_status": "",
-                    "to_status": "NEW",
-                    "actor": actor,
-                    "meta": json.dumps({"source": source}),
+                value="",
+                requisites={
+                    str(self.COL_EVENT_FROM): "",
+                    str(self.COL_EVENT_TO): "NEW",
+                    str(self.COL_EVENT_ACTOR): actor,
+                    str(self.COL_EVENT_META): json.dumps({"source": source}),
                 },
                 parentId=order["id"],
             )

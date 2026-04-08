@@ -1,6 +1,7 @@
 """order_service.py — бизнес-логика заказов."""
 
 from integram.client import IntegramClient
+from integram.mappers import igm_to_event
 from schemas.enums import OrderSource, OrderStatus
 from services.fsm import FSMError, transition
 
@@ -37,4 +38,5 @@ async def get_history(igm: IntegramClient, order_id: int) -> list[dict]:
     """Полная история переходов заказа (child-записи OrderEvent)."""
     if not igm.T_EVENTS:
         return []
-    return await igm.list_children(igm.T_ORDERS, order_id, igm.T_EVENTS)
+    raw_events = await igm.list_children(igm.T_EVENTS, order_id)
+    return [igm_to_event(e, order_id) for e in raw_events]
