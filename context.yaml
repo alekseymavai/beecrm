@@ -1,0 +1,67 @@
+# AgentForge — контекст проекта BEECRM
+# Секреты — только через ${ENV_VAR}, не хардкодь в файл.
+
+project: "BEECRM"
+telos: >
+  CRM-система для пчеловода Александра Дмитрова («Усадьба Дмитровых»).
+  Принимает заказы из трёх источников: UDS (интернет-магазин), мессенджеры
+  (Telegram/WhatsApp), таблица заказов команды.
+  Управляет жизненным циклом заказа: приёмка → уведомление клиента →
+  сборка → оформление СДЭК/Почта → отправка → трек.
+  Хранит клиентскую базу с анамнезисом (история заказов, мессенджер, адрес СДЭК).
+  BEEBOT — smart frontend (Telegram-бот), BEECRM — backend-центр данных.
+version: "0.1.0"
+lifecycle_stage: "In Design"
+
+stack:
+  language: python
+  framework: fastapi
+  database: postgresql
+  frontend: beebot_telegram_bot
+
+server:
+  host: "vm4115781.firstbyte.club"
+  ip: "178.253.39.215"
+  user: root
+  integram: "новый инстанс на этом же сервере"
+
+sources:
+  - name: UDS
+    description: "Интернет-магазин usadbadmitrov.uds.app — оплаченные и неоплаченные заказы"
+  - name: messenger
+    description: "Telegram / WhatsApp — прямые обращения клиентов"
+  - name: team_table
+    description: "Google Таблица — заказы от команды через ВК, Instagram, личные обращения"
+
+order_lifecycle:
+  - "Принят (источник: UDS / мессенджер / таблица)"
+  - "Клиент уведомлён"
+  - "Дозаказ (опционально)"
+  - "Дата сборки назначена"
+  - "Собран (вес + габариты)"
+  - "Оформлен в СДЭК / Почта"
+  - "Отправлен (трек получен)"
+  - "Доставлен"
+
+fragile_zones:
+  - file: "client_dedup"
+    reason: "UDS + мессенджер могут быть одним клиентом — дедубликация критична"
+    telos_risk: "HIGH"
+  - file: "uds_sync"
+    reason: "Нет официального UDS API — возможен парсинг или webhooks"
+    telos_risk: "HIGH"
+  - file: "cdek_address"
+    reason: "Клиенты часто указывают домашний адрес вместо адреса СДЭК"
+    telos_risk: "MEDIUM"
+  - file: "order_addon"
+    reason: "Дозаказ должен добавляться к существующему заказу, а не создавать новый"
+    telos_risk: "MEDIUM"
+
+current_state:
+  status: "In Design"
+  next_step: "Scout → карта источников данных и существующих интеграций"
+
+decisions: []
+
+team_memory_workspace: devteam
+agent_bus_dir: .agent_bus
