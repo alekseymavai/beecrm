@@ -66,6 +66,25 @@ def igm_to_order(row: dict) -> dict:
     }
 
 
+def igm_to_product(row: dict) -> dict:
+    req = row.get("requisites") or {}
+    created_at = row.get("createdAt") or row.get("created_at") or _now_iso()
+    price_raw = req.get(str(IntegramClient.COL_PRODUCT_PRICE))
+    stock_raw = req.get(str(IntegramClient.COL_PRODUCT_STOCK))
+    active_raw = req.get(str(IntegramClient.COL_PRODUCT_ACTIVE))
+    return {
+        "id": row["id"],
+        "name": row.get("value") or "",
+        "price": float(price_raw) if price_raw not in (None, "") else 0.0,
+        "category": req.get(str(IntegramClient.COL_PRODUCT_CATEGORY)) or "",
+        "stock": int(float(stock_raw)) if stock_raw not in (None, "") else 0,
+        "active": bool(active_raw) if active_raw is not None else True,
+        "description": req.get(str(IntegramClient.COL_PRODUCT_DESCRIPTION)) or "",
+        "created_at": created_at,
+        "updated_at": row.get("updatedAt") or row.get("updated_at") or created_at,
+    }
+
+
 def igm_to_event(row: dict, order_id: int) -> dict:
     req = row.get("requisites") or {}
 

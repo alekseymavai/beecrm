@@ -163,3 +163,87 @@ a { text-decoration: none; color: inherit; }
     margin-bottom: 16px;
 }
 .page-title { font-size: 15px; font-weight: 600; }
+
+/* ── Login ── */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+}
+.login-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+}
+.login-logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: var(--active-color);
+    margin-bottom: 8px;
+}
+.login-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--p-text-color);
+}
+.login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.login-field label { font-size: 13px; font-weight: 500; }
+
+/* ── Sidebar footer ── */
+.app-sidebar__footer {
+    margin-top: auto;
+    padding: 8px;
+    border-top: 1px solid var(--border);
+}
+.nav-item--logout {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--p-text-muted-color);
+    font-size: 14px;
+}
+.nav-item--logout:hover {
+    background: var(--hover);
+    color: #ef4444;
+}
+
+/* ── Dashboard stats ── */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+}
+.stat-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--active-color);
+    line-height: 1.2;
+}
+.stat-card__label {
+    font-size: 13px;
+    color: var(--p-text-muted-color);
+    margin-top: 4px;
+}
+@media (max-width: 768px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}

@@ -7,12 +7,15 @@ const route = useRoute();
 const titles = {
     '/orders': 'Заказы',
     '/clients': 'Клиенты',
+    '/products': 'Товары',
+    '/': 'Главная',
 };
 
 const title = computed(() => {
     for (const [prefix, label] of Object.entries(titles)) {
-        if (route.path.startsWith(prefix)) return label;
+        if (prefix !== '/' && route.path.startsWith(prefix)) return label;
     }
+    if (route.path === '/') return titles['/'];
     return 'BEECRM';
 });
 </script>

@@ -20,6 +20,13 @@ class IntegramClient:
     T_EVENTS   = 37   # child-таблица "История заказов" (parentTypeId=17)
     T_STATUSES = 14
     T_SOURCES  = 15
+    T_PRODUCTS = 52
+
+    COL_PRODUCT_PRICE       = 53
+    COL_PRODUCT_CATEGORY    = 54
+    COL_PRODUCT_STOCK       = 55
+    COL_PRODUCT_ACTIVE      = 56
+    COL_PRODUCT_DESCRIPTION = 57
 
     STATUS_MAP = {
         "NEW":         18,
