@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     await igm.close()
 
 
-app = FastAPI(title="BEECRM", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="BEECRM", version="0.1.0", lifespan=lifespan, redirect_slashes=False)
 
 
 @app.get("/health", tags=["system"])
