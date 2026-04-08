@@ -1,4 +1,9 @@
 .agent_bus/
 __pycache__/
-*.pyc
+*.py[cod]
 .env
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
