@@ -166,5 +166,54 @@ class IntegramClient:
 
         return order
 
+    async def import_preview(self, file_bytes: bytes, filename: str) -> dict:
+        """POST /objects/import/preview — вернуть headers + первые строки для маппинга."""
+        resp = await self._http.post(
+            f"{self.BASE}/objects/import/preview",
+            headers=self._headers(),
+            files={"file": (filename, file_bytes)},
+        )
+        if resp.status_code == 401:
+            await self._refresh_token()
+            resp = await self._http.post(
+                f"{self.BASE}/objects/import/preview",
+                headers=self._headers(),
+                files={"file": (filename, file_bytes)},
+            )
+        if not resp.is_success:
+            raise IntegramError(f"import/preview → {resp.status_code}: {resp.text}")
+        return resp.json().get("data", resp.json())
+
+    async def import_xlsx(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        typeId: int,
+        mapping: dict[str, str] | None = None,
+    ) -> dict:
+        """POST /objects/import — импорт файла в таблицу Integram."""
+        data: dict[str, Any] = {"typeId": str(typeId)}
+        if mapping:
+            data["mapping"] = json.dumps(mapping)
+        resp = await self._http.post(
+            f"{self.BASE}/objects/import",
+            headers=self._headers(),
+            files={"file": (filename, file_bytes)},
+            data=data,
+            timeout=60.0,
+        )
+        if resp.status_code == 401:
+            await self._refresh_token()
+            resp = await self._http.post(
+                f"{self.BASE}/objects/import",
+                headers=self._headers(),
+                files={"file": (filename, file_bytes)},
+                data=data,
+                timeout=60.0,
+            )
+        if not resp.is_success:
+            raise IntegramError(f"import → {resp.status_code}: {resp.text}")
+        return resp.json().get("data", resp.json())
+
     async def close(self) -> None:
         await self._http.aclose()
