@@ -36,3 +36,15 @@ class OrderStatusUpdate(BaseModel):
     status: OrderStatus
     actor: str | None = None
     meta: dict | None = None
+
+
+class OrderEventRead(BaseModel):
+    id: int
+    order_id: int
+    from_status: OrderStatus | None
+    to_status: OrderStatus
+    actor: str | None
+    meta: dict | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

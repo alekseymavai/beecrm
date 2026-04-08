@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from db import get_session
 from models.client import Client
 from schemas.client import ClientCreate, ClientRead, ClientUpdate
+from schemas.order import OrderRead
+from services.client_service import get_history
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
@@ -40,3 +42,10 @@ def update_client(client_id: int, data: ClientUpdate, db: Session = Depends(get_
     db.flush()
     db.refresh(client)
     return client
+
+
+@router.get("/{client_id}/history", response_model=list[OrderRead])
+def get_client_history(client_id: int, db: Session = Depends(get_session)):
+    if not db.get(Client, client_id):
+        raise HTTPException(status_code=404, detail="Клиент не найден")
+    return get_history(db, client_id)
