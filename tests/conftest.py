@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault("DB_URL", "sqlite:///:memory:")
 os.environ.setdefault("SECRET_KEY", "test-secret")
+os.environ.setdefault("API_KEY", "test-api-key")
 
 # SQLite не знает JSONB — патчим компилятор чтобы рендерил как JSON
 SQLiteTypeCompiler.visit_JSONB = SQLiteTypeCompiler.visit_JSON  # type: ignore
