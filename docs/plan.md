@@ -35,9 +35,9 @@
 | HIGH: INTEGRAM_T_EVENTS default=37 | 1 | ✅ done |
 | MEDIUM: import_excel Depends() | 1 | ✅ done |
 | MEDIUM: SECRET_KEY — мёртвый код убран | 1 | ✅ done |
-| HIGH: Rate limiting /import/excel | 2 | 📋 todo |
-| LOW: hmac.compare_digest в auth.py | 2 | 📋 todo |
-| LOW: MIME-type валидация загрузки | 2 | 📋 todo |
+| HIGH: Rate limiting /import/excel | 2 | ✅ done |
+| LOW: hmac.compare_digest в auth.py | 2 | ✅ done |
+| LOW: MIME-type валидация загрузки | 2 | ✅ done |
 | LOW: Тесты Products API | 3 | 📋 todo |
 | LOW: Тесты Import API | 3 | 📋 todo |
 | MEDIUM: context.yaml — удалить устаревший | 4 | 📋 todo |
@@ -70,6 +70,7 @@
 | ADR-006 | Import fallback: сначала Integram import API, потом openpyxl построчно | accepted |
 | ADR-007 | IntegramClient.BASE строится из INTEGRAM_WORKSPACE, передаётся в authenticate() | accepted |
 | ADR-008 | SECRET_KEY удалён из REQUIRED_VARS — не используется в коде, мёртвый код | accepted |
+| ADR-009 | Rate limiting без внешних зависимостей — in-process dict с TTL окном | accepted |
 
 ---
 
