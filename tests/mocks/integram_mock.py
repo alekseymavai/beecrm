@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+from integram.exceptions import IntegramError
+
 
 class FakeIntegramClient:
     """In-memory реализация IntegramClient. Не делает HTTP-запросов."""
@@ -12,6 +14,13 @@ class FakeIntegramClient:
     T_EVENTS = 999   # ненулевое значение — события включены в тестах
     T_STATUSES = 14
     T_SOURCES = 15
+    T_PRODUCTS = 52
+
+    COL_PRODUCT_PRICE = 53
+    COL_PRODUCT_CATEGORY = 54
+    COL_PRODUCT_STOCK = 55
+    COL_PRODUCT_ACTIVE = 56
+    COL_PRODUCT_DESCRIPTION = 57
 
     STATUS_MAP = {
         "NEW": 18,
@@ -163,6 +172,20 @@ class FakeIntegramClient:
                 parentId=order["id"],
             )
         return order
+
+    async def import_preview(self, file_bytes: bytes, filename: str) -> dict:
+        """Симулируем отказ Integram → тесты проверяют openpyxl fallback."""
+        raise IntegramError("FakeIntegramClient: import_preview not supported")
+
+    async def import_xlsx(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        typeId: int,
+        mapping: dict | None = None,
+    ) -> dict:
+        """Симулируем отказ Integram → тесты проверяют openpyxl fallback."""
+        raise IntegramError("FakeIntegramClient: import_xlsx not supported")
 
     async def close(self) -> None:
         pass
