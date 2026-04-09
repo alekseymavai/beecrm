@@ -16,7 +16,7 @@ from integram.client import IntegramClient
 async def lifespan(app: FastAPI):
     settings.startup_check()
     igm = await IntegramClient.authenticate(
-        settings.INTEGRAM_LOGIN, settings.INTEGRAM_PASSWORD
+        settings.INTEGRAM_LOGIN, settings.INTEGRAM_PASSWORD, workspace=settings.INTEGRAM_WORKSPACE
     )
     igm.T_EVENTS = settings.INTEGRAM_T_EVENTS
     app.state.integram = igm
@@ -28,7 +28,7 @@ app = FastAPI(title="BEECRM", version="0.1.0", lifespan=lifespan, redirect_slash
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://178.253.39.215:8080", "http://localhost:5277", "http://localhost:5173"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["X-API-Key", "Content-Type", "Cache-Control"],
 )

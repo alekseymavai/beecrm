@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("API_KEY", "test-api-key")
 os.environ.setdefault("INTEGRAM_LOGIN", "test-login")
 os.environ.setdefault("INTEGRAM_PASSWORD", "test-password")

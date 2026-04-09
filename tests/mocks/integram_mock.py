@@ -80,6 +80,14 @@ class FakeIntegramClient:
             if obj.get("_parentId") == parent_id
         ]
 
+    async def list_orders_by_client(self, client_id: int) -> list[dict]:
+        """История заказов клиента — in-memory фильтрация по client_id."""
+        return [
+            obj
+            for obj in self._store(self.T_ORDERS).values()
+            if (obj.get("requisites") or {}).get(str(self.COL_ORDER_CLIENT)) == client_id
+        ]
+
     async def create_object(
         self,
         typeId: int,

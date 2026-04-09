@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class IntegramClient:
-    BASE = "https://ai2o.online/api/v2/beecrm"
     IAM  = "https://ai2o.online/api/v2/iam"
 
     T_CLIENTS  = 16
@@ -61,15 +60,16 @@ class IntegramClient:
     COL_EVENT_META   = 41
     COL_EVENT_TIME   = 42
 
-    def __init__(self, login: str, password: str, token: str | None = None) -> None:
+    def __init__(self, login: str, password: str, token: str | None = None, workspace: str = "beecrm") -> None:
         self._login    = login
         self._password = password
         self._token    = token
         self._http     = httpx.AsyncClient(timeout=30.0)
+        self.BASE      = f"https://ai2o.online/api/v2/{workspace}"
 
     @classmethod
-    async def authenticate(cls, login: str, password: str) -> "IntegramClient":
-        instance = cls(login, password)
+    async def authenticate(cls, login: str, password: str, workspace: str = "beecrm") -> "IntegramClient":
+        instance = cls(login, password, workspace=workspace)
         await instance._refresh_token()
         return instance
 
@@ -167,6 +167,33 @@ class IntegramClient:
     async def list_children(self, child_typeId: int, parent_id: int) -> list[dict]:
         """Child-записи для конкретного объекта."""
         return await self.list_objects(child_typeId, parent_id=parent_id, page_size=200)
+
+    async def list_orders_by_client(self, client_id: int) -> list[dict]:
+        """Все заказы клиента — серверная фильтрация + пагинация."""
+        result = []
+        page = 1
+        while True:
+            data = await self._request(
+                "GET",
+                f"{self.BASE}/objects",
+                params={
+                    "typeId": self.T_ORDERS,
+                    "page": page,
+                    "pageSize": 100,
+                    f"filter[{self.COL_ORDER_CLIENT}][eq]": str(client_id),
+                },
+            )
+            if isinstance(data, list):
+                rows = data
+            elif isinstance(data, dict):
+                rows = data.get("rows", data.get("items", data.get("data", [])))
+            else:
+                rows = []
+            result.extend(rows)
+            if len(rows) < 100:
+                break
+            page += 1
+        return result
 
     # ── Orders ────────────────────────────────────────────────────────────────
 

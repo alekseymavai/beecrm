@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
 from integram.client import IntegramClient
 from integram.deps import get_integram
@@ -32,14 +32,12 @@ def _validate_file(file: UploadFile) -> None:
 
 
 @router.post("/excel/preview")
-async def import_preview(request: Request, file: UploadFile):
+async def import_preview(file: UploadFile, igm: IntegramClient = Depends(get_integram)):
     """Вернуть заголовки и первые строки файла для настройки маппинга."""
     _validate_file(file)
     content = await file.read()
     if len(content) > _MAX_FILE_BYTES:
         raise HTTPException(413, "Файл превышает 10 МБ")
-
-    igm: IntegramClient = get_integram(request)
     try:
         return await igm.import_preview(content, file.filename or "import.xlsx")
     except IntegramError as exc:
@@ -70,9 +68,9 @@ def _local_preview(content: bytes, filename: str) -> dict:
 
 @router.post("/excel")
 async def import_excel(
-    request: Request,
     file: UploadFile,
     mapping: str | None = None,
+    igm: IntegramClient = Depends(get_integram),
 ):
     """
     Импортировать заказы из xlsx/csv в Integram (typeId=17).
@@ -94,8 +92,6 @@ async def import_excel(
             _validate_mapping(parsed_mapping)
         except (json.JSONDecodeError, ValueError) as exc:
             raise HTTPException(400, f"Неверный mapping: {exc}")
-
-    igm: IntegramClient = get_integram(request)
 
     # Попытка через Integram
     try:

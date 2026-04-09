@@ -62,13 +62,5 @@ async def find_or_create(
 
 
 async def get_history(igm: IntegramClient, client_id: int) -> list[dict]:
-    """История заказов клиента."""
-    orders = await igm.list_objects(igm.T_ORDERS, page_size=100)
-    result = []
-    for order in orders:
-        req = order.get("requisites") or {}
-        cid_raw = req.get(str(igm.COL_ORDER_CLIENT))
-        cid = int(cid_raw) if cid_raw is not None else None
-        if cid == client_id:
-            result.append(order)
-    return result
+    """История заказов клиента — серверная фильтрация по client_id."""
+    return await igm.list_orders_by_client(client_id)
