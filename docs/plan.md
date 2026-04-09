@@ -20,8 +20,28 @@
 | 9 | Уведомления клиентам (Telegram / WhatsApp) | 📋 todo |
 | 10 | UDS интеграция (официальный API или webhook) | 📋 todo |
 | 11 | Дозаказ: добавлять к существующему заказу | 📋 todo |
-| 12 | HTTPS + CORS из env | 📋 todo |
-| 13 | Пагинация client_history (сейчас загружает все заказы в память) | 📋 todo |
+| 12 | HTTPS + CORS из env | ✅ done — CORS_ORIGINS из .env (волна 1, 09.04.2026) |
+| 13 | Пагинация client_history (сейчас загружает все заказы в память) | ✅ done — серверный фильтр + пагинация (волна 1, 09.04.2026) |
+
+---
+
+## Спринт аудита 09.04.2026 (AgentForge)
+
+| Задача | Волна | Статус |
+|--------|-------|--------|
+| CRITICAL: client_history серверный фильтр | 1 | ✅ done |
+| HIGH: CORS_ORIGINS из env | 1 | ✅ done |
+| HIGH: IntegramClient.BASE из INTEGRAM_WORKSPACE | 1 | ✅ done |
+| HIGH: INTEGRAM_T_EVENTS default=37 | 1 | ✅ done |
+| MEDIUM: import_excel Depends() | 1 | ✅ done |
+| MEDIUM: SECRET_KEY — мёртвый код убран | 1 | ✅ done |
+| HIGH: Rate limiting /import/excel | 2 | 📋 todo |
+| LOW: hmac.compare_digest в auth.py | 2 | 📋 todo |
+| LOW: MIME-type валидация загрузки | 2 | 📋 todo |
+| LOW: Тесты Products API | 3 | 📋 todo |
+| LOW: Тесты Import API | 3 | 📋 todo |
+| MEDIUM: context.yaml — удалить устаревший | 4 | 📋 todo |
+| LOW: dashboard/dist/ в .gitignore | 4 | 📋 todo |
 
 ---
 
@@ -48,6 +68,8 @@
 | ADR-004 | Soft-delete для товаров (active=False) вместо физического удаления | accepted |
 | ADR-005 | Dashboard — отдельный SPA (Vue 3), API-ключ в localStorage | accepted |
 | ADR-006 | Import fallback: сначала Integram import API, потом openpyxl построчно | accepted |
+| ADR-007 | IntegramClient.BASE строится из INTEGRAM_WORKSPACE, передаётся в authenticate() | accepted |
+| ADR-008 | SECRET_KEY удалён из REQUIRED_VARS — не используется в коде, мёртвый код | accepted |
 
 ---
 
