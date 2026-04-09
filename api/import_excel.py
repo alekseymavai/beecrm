@@ -2,8 +2,10 @@
 
 import json
 import logging
+import time
+from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 
 from integram.client import IntegramClient
 from integram.deps import get_integram
@@ -15,11 +17,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/import", tags=["import"])
 
 _MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
-_ALLOWED_TYPES = {
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-excel",
-    "text/csv",
-}
+_XLSX_MAGIC = b"PK\x03\x04"  # ZIP/XLSX magic bytes
+
+# Rate limiting: не более 10 запросов в минуту на IP
+_RATE_LIMIT = 10
+_RATE_WINDOW = 60.0
+_rate_store: dict[str, list[float]] = defaultdict(list)
+
+
+async def _check_rate_limit(request: Request) -> None:
+    ip = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    cutoff = now - _RATE_WINDOW
+    timestamps = [t for t in _rate_store[ip] if t > cutoff]
+    if len(timestamps) >= _RATE_LIMIT:
+        raise HTTPException(429, "Слишком много запросов. Повторите через минуту.")
+    timestamps.append(now)
+    _rate_store[ip] = timestamps
 
 
 def _validate_file(file: UploadFile) -> None:
@@ -28,16 +42,29 @@ def _validate_file(file: UploadFile) -> None:
         raise HTTPException(400, "Разрешены только .xlsx, .xls, .csv файлы")
 
 
+def _validate_mime(content: bytes, filename: str) -> None:
+    """Проверка magic bytes для xlsx/xls (ZIP-формат). CSV — пропускаем."""
+    if filename.lower().endswith(".csv"):
+        return
+    if not content.startswith(_XLSX_MAGIC):
+        raise HTTPException(400, "Файл не является валидным xlsx/xls (неверная сигнатура)")
+
+
 # ── Preview ──────────────────────────────────────────────────────────────────
 
 
 @router.post("/excel/preview")
-async def import_preview(file: UploadFile, igm: IntegramClient = Depends(get_integram)):
+async def import_preview(
+    file: UploadFile,
+    igm: IntegramClient = Depends(get_integram),
+    _rl: None = Depends(_check_rate_limit),
+):
     """Вернуть заголовки и первые строки файла для настройки маппинга."""
     _validate_file(file)
     content = await file.read()
     if len(content) > _MAX_FILE_BYTES:
         raise HTTPException(413, "Файл превышает 10 МБ")
+    _validate_mime(content, file.filename or "")
     try:
         return await igm.import_preview(content, file.filename or "import.xlsx")
     except IntegramError as exc:
@@ -71,6 +98,7 @@ async def import_excel(
     file: UploadFile,
     mapping: str | None = None,
     igm: IntegramClient = Depends(get_integram),
+    _rl: None = Depends(_check_rate_limit),
 ):
     """
     Импортировать заказы из xlsx/csv в Integram (typeId=17).
@@ -84,6 +112,7 @@ async def import_excel(
     content = await file.read()
     if len(content) > _MAX_FILE_BYTES:
         raise HTTPException(413, "Файл превышает 10 МБ")
+    _validate_mime(content, file.filename or "")
 
     parsed_mapping: dict[str, str] | None = None
     if mapping:
