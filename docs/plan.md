@@ -40,8 +40,8 @@
 | LOW: MIME-type валидация загрузки | 2 | ✅ done |
 | LOW: Тесты Products API | 3 | ✅ done — 11 тестов |
 | LOW: Тесты Import API | 3 | ✅ done — 6 тестов |
-| MEDIUM: context.yaml — удалить устаревший | 4 | 📋 todo |
-| LOW: dashboard/dist/ в .gitignore | 4 | 📋 todo |
+| MEDIUM: context.yaml — удалить устаревший | 4 | ✅ done — удалён (PostgreSQL/IP устарели) |
+| LOW: dashboard/dist/ в .gitignore | 4 | ✅ done — явная запись добавлена |
 
 ---
 

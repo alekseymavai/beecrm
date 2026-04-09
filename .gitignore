@@ -7,4 +7,5 @@ __pycache__/
 venv/
 *.egg-info/
 dist/
+dashboard/dist/
 dashboard/.env
