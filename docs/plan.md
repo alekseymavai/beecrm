@@ -38,8 +38,8 @@
 | HIGH: Rate limiting /import/excel | 2 | ✅ done |
 | LOW: hmac.compare_digest в auth.py | 2 | ✅ done |
 | LOW: MIME-type валидация загрузки | 2 | ✅ done |
-| LOW: Тесты Products API | 3 | 📋 todo |
-| LOW: Тесты Import API | 3 | 📋 todo |
+| LOW: Тесты Products API | 3 | ✅ done — 11 тестов |
+| LOW: Тесты Import API | 3 | ✅ done — 6 тестов |
 | MEDIUM: context.yaml — удалить устаревший | 4 | 📋 todo |
 | LOW: dashboard/dist/ в .gitignore | 4 | 📋 todo |
 
