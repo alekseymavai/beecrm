@@ -17,7 +17,7 @@
 | 6 | Дашборд (Vue 3 + PrimeVue 4) | ✅ done — Login, Dashboard, Orders, Clients, Products |
 | 7 | Импорт заказов из Excel / Google Таблицы | ✅ done — POST /import/excel + /preview |
 | 8 | Товары (Products API) | ✅ done — CRUD + soft-delete |
-| 9 | Уведомления клиентам (Telegram / WhatsApp) | 📋 todo |
+| 9 | Уведомления команде пчеловода (BEEBOTLITE) | ✅ done — NotifyService, рассылка активным пользователям APIARY_T_USERS, fallback на ADMIN_TG_ID, 8 тестов (10.04.2026) |
 | 10 | UDS интеграция (polling, модуль uds/) | ✅ done — polling, mapper, poller, router, 14 тестов (10.04.2026) |
 | 11 | Дозаказ: добавлять к существующему заказу | 📋 todo |
 | 12 | HTTPS + CORS из env | ✅ done — CORS_ORIGINS из .env (волна 1, 09.04.2026) |
@@ -48,14 +48,13 @@
 
 ## Следующий шаг
 
-**Этап 9 — Уведомления клиентам:**
-- Telegram-уведомления при смене статуса заказа
-- Интеграция с BEEBOT (Telegram бот)
-- Webhook или polling статусов
+**Этап 11 — Дозаказ:**
+- Добавлять позиции к существующему заказу
+- API эндпоинт + логика FSM
 
-**Этап 12 — HTTPS + CORS:**
-- CORS_ORIGINS вынести в переменные окружения
+**Этап 3 — HTTPS:**
 - Let's Encrypt через certbot/traefik
+- Ждёт готовности DNS
 
 ---
 
@@ -72,6 +71,7 @@
 | ADR-007 | IntegramClient.BASE строится из INTEGRAM_WORKSPACE, передаётся в authenticate() | accepted |
 | ADR-008 | SECRET_KEY удалён из REQUIRED_VARS — не используется в коде, мёртвый код | accepted |
 | ADR-009 | Rate limiting без внешних зависимостей — in-process dict с TTL окном | accepted |
+| ADR-010 | NotifyService — Bot создаётся один раз в lifespan, передаётся в UDSPoller через конструктор; ошибка уведомления не прерывает создание заказа | accepted |
 
 ---
 
