@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class UDSPoller:
-    def __init__(self, igm, _uds_client=None) -> None:
+    def __init__(self, igm, _uds_client=None, notify_service=None) -> None:
         self._igm = igm
+        self._notify = notify_service  # опциональный NotifyService
         self._uds: UDSAdminClient = _uds_client or UDSAdminClient(
             token=uds_config.UDS_ADMIN_TOKEN,
             company_id=uds_config.UDS_COMPANY_ID,
@@ -111,6 +112,12 @@ class UDSPoller:
         self.seen_ids.add(str(parsed["uds_order_id"]))
         self._synced_count += 1
         logger.info("UDS заказ %s → BEECRM client=%s", parsed["uds_order_id"], client["id"])
+
+        if self._notify is not None:
+            try:
+                await self._notify.notify_new_order(parsed)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("UDS уведомление не отправлено (заказ %s): %s", parsed["uds_order_id"], exc)
 
 
 def _now_iso() -> str:

@@ -24,11 +24,32 @@ async def lifespan(app: FastAPI):
     igm.T_EVENTS = settings.INTEGRAM_T_EVENTS
     app.state.integram = igm
     uds_config.check()
-    uds_poller = UDSPoller(igm)
+
+    # ── Telegram Bot для уведомлений команде пчеловода ────────────────────────
+    notify_service = None
+    if settings.BEEBOTLITE_TOKEN:
+        try:
+            from aiogram import Bot
+            from services.notify_service import NotifyService
+            admin_tg_id = int(settings.BEEBOTLITE_ADMIN_TG_ID) if settings.BEEBOTLITE_ADMIN_TG_ID else 0
+            bot = Bot(token=settings.BEEBOTLITE_TOKEN)
+            notify_service = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_tg_id)
+            app.state.bot = bot
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("BEEBOTLITE Bot не инициализирован: %s", exc)
+
+    uds_poller = UDSPoller(igm, notify_service=notify_service)
     app.state.uds_poller = uds_poller
     await uds_poller.start()
     yield
     await uds_poller.stop()
+    if hasattr(app.state, "bot"):
+        try:
+            await app.state.bot.session.close()
+        except Exception as exc:  # noqa: BLE001
+            import logging as _lg
+            _lg.getLogger(__name__).warning("Bot session close error: %s", exc)
     await igm.close()
 
 
