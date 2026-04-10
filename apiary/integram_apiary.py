@@ -27,8 +27,16 @@ def _reqs(**kwargs: Any) -> dict[str, Any]:
 
 
 def _row_value(row: dict, col_id: int) -> Any:
-    """Извлечь значение поля по col_id из Integram-объекта."""
-    for req in row.get("requisites", []):
+    """Извлечь значение поля по col_id из Integram-объекта.
+
+    Integram v2 возвращает requisites как dict {"colId": value},
+    list_objects возвращает объекты без requisites — нужен get_object.
+    """
+    reqs = row.get("requisites", {})
+    if isinstance(reqs, dict):
+        return reqs.get(str(col_id))
+    # Старый формат (массив) — на случай совместимости
+    for req in reqs:
         if req.get("id") == col_id:
             return req.get("value")
     return None
@@ -49,12 +57,16 @@ async def get_user_by_tg_id(client: IntegramClient, tg_id: str) -> ApiaryUser | 
         )
         if row is None:
             return None
+        # list_objects не включает requisites — получаем полный объект
+        full = await client.get_object(row["id"])
+        if full is None:
+            return None
         return ApiaryUser(
-            integram_id=row["id"],
+            integram_id=full["id"],
             tg_id=tg_id,
-            tg_username=_row_value(row, config.COL_USER_USERNAME),
-            role=_row_value(row, config.COL_USER_ROLE) or "Пчеловод",
-            is_active=bool(_row_value(row, config.COL_USER_ACTIVE)),
+            tg_username=_row_value(full, config.COL_USER_USERNAME),
+            role=_row_value(full, config.COL_USER_ROLE) or "Пчеловод",
+            is_active=bool(_row_value(full, config.COL_USER_ACTIVE)),
         )
     except IntegramError as exc:
         logger.error("get_user_by_tg_id(%s): %s", tg_id, exc)
