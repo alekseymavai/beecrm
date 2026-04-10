@@ -42,6 +42,30 @@ class TestTableAdapter:
         assert result["source_channel"] == "ВК"
 
 
+class TestUDSAdapterFullFields:
+    def test_uds_adapter_full_fields(self):
+        raw = {
+            "uds_order_id": 12345,
+            "state": "ACCEPTED",
+            "customer_name": "Иван Петров",
+            "customer_phone": "+79161234567",
+            "total": 2850.0,
+            "delivery_cost": 350.0,
+            "items_total": 2500.0,
+            "delivery_name": "СДЭК",
+            "address": "Москва, ул. Ленина 1",
+            "comment": "Позвоните",
+            "items": [{"name": "Мёд", "qty": 1, "price": 500.0}],
+            "paid": True,
+        }
+        result = UDSAdapter().normalize(raw)
+        assert result["uds_order_id"] == 12345
+        assert result["state"] == "ACCEPTED"
+        assert result["customer_name"] == "Иван Петров"
+        assert result["customer_phone"] == "+79161234567"
+        assert result["delivery_cost"] == 350.0
+
+
 class TestBaseAdapterSecurity:
     def test_forbidden_keys(self):
         adapter = UDSAdapter()

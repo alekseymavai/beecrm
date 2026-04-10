@@ -18,7 +18,7 @@
 | 7 | Импорт заказов из Excel / Google Таблицы | ✅ done — POST /import/excel + /preview |
 | 8 | Товары (Products API) | ✅ done — CRUD + soft-delete |
 | 9 | Уведомления клиентам (Telegram / WhatsApp) | 📋 todo |
-| 10 | UDS интеграция (официальный API или webhook) | 📋 todo |
+| 10 | UDS интеграция (polling, модуль uds/) | ✅ done — polling, mapper, poller, router, 14 тестов (10.04.2026) |
 | 11 | Дозаказ: добавлять к существующему заказу | 📋 todo |
 | 12 | HTTPS + CORS из env | ✅ done — CORS_ORIGINS из .env (волна 1, 09.04.2026) |
 | 13 | Пагинация client_history (сейчас загружает все заказы в память) | ✅ done — серверный фильтр + пагинация (волна 1, 09.04.2026) |

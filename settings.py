@@ -43,3 +43,7 @@ def startup_check() -> None:
 BEEBOTLITE_TOKEN: str = os.environ.get("BEEBOTLITE_TOKEN", "")
 GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
 BEEBOTLITE_ADMIN_TG_ID: str = os.environ.get("BEEBOTLITE_ADMIN_TG_ID", "")
+
+# ── UDS ───────────────────────────────────────────────────────────────────────
+# Переменные модуля uds/ читаются напрямую через os.environ в uds/config.py.
+# UDS_ADMIN_TOKEN, UDS_COMPANY_ID, UDS_POLL_INTERVAL, UDS_INITIAL_SYNC

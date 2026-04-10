@@ -267,13 +267,87 @@ BEECRM/
 |------|------|--------|
 | `client_dedup` | Дедупликация по phone/email через Integram search | ✅ реализовано |
 | `no_transactions` | Integram не поддерживает ACID | ⚠️ compensating actions |
-| `uds_sync` | Нет официального UDS API | ⏳ не начато |
+| `uds_sync` | UDS polling: seen_ids in-memory — сбрасывается при рестарте | ⚠️ заказы до рестарта не дедуплицируются |
 | `order_addon` | Дозаказ должен добавляться к существующему | ⏳ не начато |
 | `client_history_query` | get_history в client_service: загружает все заказы (page_size=100), фильтрует в памяти | ⚠️ не масштабируется при >100 заказах |
 | `import_auth` | /import/excel/preview не использует Depends(get_integram) — вызывает get_integram(request) напрямую | ⚠️ нарушение паттерна зависимостей |
 | `BASE_url_hardcode` | IntegramClient.BASE захардкожен как строка с workspace | ⚠️ нет workspace-параметра |
 
 ---
+
+---
+
+## Модуль UDS (polling-интеграция)
+
+> Добавлено AgentForge · 10.04.2026
+
+### Описание
+
+Polling-интеграция UDS-магазина → BEECRM по микроядерному паттерну модуля `apiary/`.
+При появлении нового заказа в UDS — создаёт клиента и заказ в BEECRM через `find_or_create` + `create_order`.
+
+**Микроядерный принцип**: модуль изолирован в `uds/`. Ядро (`integram/`, `services/`) не изменялось.
+
+### Принцип работы
+
+```
+UDS Admin API (api.uds.app/admin)
+    │  polling каждые UDS_POLL_INTERVAL сек
+    ▼
+UDSPoller._tick()
+    ├─ GET /goods-orders (offset=0, limit=50)
+    ├─ фильтр: seen_ids (in-memory дедупликация)
+    ├─ GET /goods-orders/{id} (детали)
+    └─ _process_order()
+         ├─ parse_order() → нормализованный dict
+         ├─ client_service.find_or_create()
+         └─ order_service.create_order(source=UDS)
+```
+
+### Маппинг статусов UDS → OrderStatus
+
+| UDS state | OrderStatus |
+|-----------|-------------|
+| NEW | NEW |
+| NEED_ACK | NEW |
+| WAITING_PAYMENT | NEW |
+| ACCEPTED | CONFIRMED |
+| COMPLETED | DONE |
+| CANCELLED | CANCELLED |
+
+### API endpoints
+
+| Метод | Путь | Аутентификация | Описание |
+|-------|------|---------------|----------|
+| GET | `/uds/health` | нет | Статус polling (running, last_poll, error, synced_count) |
+| POST | `/uds/poll` | X-API-Key | Ручной триггер одного tick |
+
+### Переменные окружения
+
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `UDS_ADMIN_TOKEN` | рекомендована | Bearer токен (~120 дней), модуль опционален |
+| `UDS_COMPANY_ID` | рекомендована | ID компании в UDS |
+| `UDS_POLL_INTERVAL` | — | Интервал в секундах (default: 60) |
+| `UDS_INITIAL_SYNC` | — | Начальная синхронизация истории (not yet implemented) |
+
+### Структура файлов
+
+```
+uds/
+├── __init__.py
+├── config.py      ← env-переменные, check() — WARNING если не задан
+├── client.py      ← UDSAdminClient (httpx), UDSError/UDSAuthError/UDSAPIError
+├── mapper.py      ← parse_order(), UDS_STATUS_MAP
+├── poller.py      ← UDSPoller: start/stop/status/_tick/_process_order
+└── router.py      ← GET /uds/health, POST /uds/poll
+```
+
+### Обработка ошибок
+
+- `UDSAuthError` (401/403) → устанавливает `_error`, останавливает loop, не крашит приложение
+- Ошибка одного заказа → логирует ERROR, продолжает обработку остальных
+- Токен не задан → WARNING при старте, poller запускается но не делает запросов
 
 ---
 
