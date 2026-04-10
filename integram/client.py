@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class IntegramClient:
-    IAM  = "https://ai2o.online/api/v2/iam"
+    IAM  = "https://ai2o.ru/api/v2/iam"
 
     T_CLIENTS  = 16
     T_ORDERS   = 17
@@ -65,7 +65,7 @@ class IntegramClient:
         self._password = password
         self._token    = token
         self._http     = httpx.AsyncClient(timeout=30.0)
-        self.BASE      = f"https://ai2o.online/api/v2/{workspace}"
+        self.BASE      = f"https://ai2o.ru/api/v2/{workspace}"
 
     @classmethod
     async def authenticate(cls, login: str, password: str, workspace: str = "beecrm") -> "IntegramClient":
