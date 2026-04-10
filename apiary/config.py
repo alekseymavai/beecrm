@@ -4,6 +4,7 @@ import os
 
 BOT_TOKEN: str = os.environ["BEEBOTLITE_TOKEN"]
 GROQ_API_KEY: str = os.environ["GROQ_API_KEY"]
+GROQ_BASE_URL: str = os.environ.get("GROQ_BASE_URL", "https://api.groq.com")
 ADMIN_TG_ID: int = int(os.environ["BEEBOTLITE_ADMIN_TG_ID"])
 
 # Учётные данные Integram (берутся из общих настроек)

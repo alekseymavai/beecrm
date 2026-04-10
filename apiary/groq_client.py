@@ -14,7 +14,7 @@ from typing import Any
 
 from groq import AsyncGroq
 
-from apiary.config import GROQ_API_KEY
+from apiary.config import GROQ_API_KEY, GROQ_BASE_URL
 from apiary.prompts import INSPECTION_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ _client: AsyncGroq | None = None
 def _get_client() -> AsyncGroq:
     global _client
     if _client is None:
-        _client = AsyncGroq(api_key=GROQ_API_KEY)
+        _client = AsyncGroq(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL)
     return _client
 
 
