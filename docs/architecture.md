@@ -275,4 +275,103 @@ BEECRM/
 
 ---
 
-*Обновлено AgentForge · 09.04.2026*
+---
+
+## Модуль Apiary (BEEBOTLITE)
+
+> Добавлено AgentForge · 10.04.2026
+
+### Описание
+
+Telegram-бот пчеловода. Принимает голосовые и текстовые сообщения осмотров ульев,
+транскрибирует речь через Groq Whisper, извлекает структурированные данные через Groq LLM
+и сохраняет в Integram.
+
+**Микроядерный принцип**: модуль изолирован в `apiary/`. Ядро (`integram/`, `settings.py`) не изменялось.
+
+### Таблицы Integram (создать через `python -m apiary.scripts.create_tables`)
+
+| Таблица | Env APIARY_T_* | Описание |
+|---------|---------------|----------|
+| Роли пасеки | APIARY_T_ROLES | Справочник: Пчеловод, Старший пчеловод, Администратор |
+| Статусы здоровья | APIARY_T_HEALTH | Справочник: Здоров, Требует внимания, Болен, Подозрение |
+| Ульи | APIARY_T_HIVES | Объекты пасеки (name, location, is_active) |
+| Пользователи бота | APIARY_T_USERS | Telegram-пользователи (tg_id, role, is_active) |
+| Осмотры | APIARY_T_INSPECTIONS | Записи осмотров (13 полей + raw_text) |
+
+TypeId заполняются после запуска скрипта `python -m apiary.scripts.create_tables`
+и прописываются в `.env` (см. `.env.example` секция BEEBOTLITE).
+
+### Переменные окружения
+
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `BEEBOTLITE_TOKEN` | ✅ | Telegram Bot Token |
+| `GROQ_API_KEY` | ✅ | Groq API ключ (STT + LLM) |
+| `BEEBOTLITE_ADMIN_TG_ID` | ✅ | Telegram ID администратора |
+| `APIARY_T_ROLES` | ✅ | typeId таблицы "Роли пасеки" |
+| `APIARY_T_HEALTH` | ✅ | typeId таблицы "Статусы здоровья" |
+| `APIARY_T_HIVES` | ✅ | typeId таблицы "Ульи" |
+| `APIARY_T_USERS` | ✅ | typeId таблицы "Пользователи бота" |
+| `APIARY_T_INSPECTIONS` | ✅ | typeId таблицы "Осмотры" |
+| `APIARY_COL_*` | ✅ | col_id всех колонок (см. .env.example) |
+
+### FSM осмотра
+
+```
+IDLE
+  │ 🐝 Начать осмотр
+  ▼
+INSPECTION ← голос/текст → Groq Whisper → Groq LLM → Integram
+  │
+  │ requires_clarification → 1 переспрос → is_draft=True
+  │
+  │ ✅ Завершить осмотр
+  ▼
+IDLE (вывод сводки: кол-во записей, ульи требующие внимания)
+```
+
+### PRIVACY NOTE
+
+Голосовые и текстовые сообщения уходят в облако Groq (api.groq.com).
+raw_text хранится в Integram, в логи не попадает.
+
+### Структура файлов
+
+```
+apiary/
+├── __init__.py
+├── bot.py                   ← точка входа (python -m apiary.bot)
+├── config.py                ← env-переменные модуля
+├── models.py                ← Pydantic: Hive, ApiaryUser, InspectionRecord
+├── prompts.py               ← LLM-промпт извлечения осмотра
+├── groq_client.py           ← transcribe() + extract_record()
+├── integram_apiary.py       ← CRUD: get_user, create_inspection, get_last_inspections
+├── scripts/
+│   └── create_tables.py     ← одноразовый скрипт инициализации таблиц
+├── routers/
+│   ├── start.py             ← /start, главное меню, регистрация
+│   ├── inspection.py        ← FSM осмотра
+│   └── admin.py             ← /adduser, /addhive, /approve
+└── tests/
+    ├── conftest.py          ← FakeIntegramClient + env-заглушки
+    └── test_inspection.py   ← 5 тестов
+```
+
+### Запуск
+
+```bash
+# 1. Создать таблицы в Integram (один раз)
+python -m apiary.scripts.create_tables
+
+# 2. Прописать typeId и colId в .env
+
+# 3. Запустить бота
+python -m apiary.bot
+
+# Или через systemd
+sudo cp beebotlite.service /etc/systemd/system/
+sudo systemctl enable --now beebotlite
+```
+
+*Обновлено AgentForge · 10.04.2026*

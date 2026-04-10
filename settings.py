@@ -35,3 +35,11 @@ def startup_check() -> None:
         logger.warning("INTEGRAM_T_EVENTS=0 — история заказов отключена. Задайте INTEGRAM_T_EVENTS в .env.")
     if not CORS_ORIGINS:
         logger.warning("CORS_ORIGINS не задан — CORS отключён для браузеров. Задайте CORS_ORIGINS в .env.")
+
+
+# ── BEEBOTLITE ────────────────────────────────────────────────────────────────
+# Переменные модуля apiary/ читаются напрямую через os.environ в apiary/config.py.
+# Здесь объявлены только для документирования и возможного использования в main.
+BEEBOTLITE_TOKEN: str = os.environ.get("BEEBOTLITE_TOKEN", "")
+GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
+BEEBOTLITE_ADMIN_TG_ID: str = os.environ.get("BEEBOTLITE_ADMIN_TG_ID", "")

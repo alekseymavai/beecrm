@@ -1,0 +1,15 @@
+[Unit]
+Description=BEEBOTLITE — Telegram bot for apiary
+After=network.target
+
+[Service]
+Type=simple
+User=ai-agent
+WorkingDirectory=/home/ai-agent/BEECRM
+EnvironmentFile=/home/ai-agent/BEECRM/.env
+ExecStart=/home/ai-agent/BEECRM/.venv/bin/python -m apiary.bot
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
