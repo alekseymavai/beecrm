@@ -11,7 +11,7 @@
 |------|--------|--------|
 | 1 | Рефактор `api/orders` через `order_service` + `GET /*/history` | ✅ done |
 | 2 | API Key аутентификация (`X-API-Key`, 403) | ✅ done |
-| 3 | HTTPS — nginx + Let's Encrypt для `api.ai2o.online` | ⏳ blocked (ждём DNS) |
+| 3 | HTTPS — nginx + Let's Encrypt для `usadbadmitrov.ru` | ✅ done — Certbot, nginx (11.04.2026) |
 | 4 | `POST /orders/from-source` — единая точка входа через адаптер | ✅ done |
 | 5 | Рефакторинг хранилища: PostgreSQL → Integram API | ✅ done |
 | 6 | Дашборд (Vue 3 + PrimeVue 4) | ✅ done — Login, Dashboard, Orders, Clients, Products |
@@ -52,9 +52,9 @@
 - Добавлять позиции к существующему заказу
 - API эндпоинт + логика FSM
 
-**Этап 3 — HTTPS:**
-- Let's Encrypt через certbot/traefik
-- Ждёт готовности DNS
+**Этап 3 — HTTPS:** ✅ done (11.04.2026)
+- Certbot + nginx на `usadbadmitrov.ru` / `www.usadbadmitrov.ru`
+- SSL сертификат активен, proxy_pass → 127.0.0.1:8000
 
 ---
 
