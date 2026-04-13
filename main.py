@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
     await igm.close()
 
 
-app = FastAPI(title="BEECRM", version="0.1.0", lifespan=lifespan, redirect_slashes=False)
+app = FastAPI(title="BEECRM", version="1.0.0", lifespan=lifespan, redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
