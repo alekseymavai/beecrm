@@ -119,8 +119,7 @@ async def test_auth_error_stops_poller():
     await poller._tick()
 
     st = poller.status()
-    assert st["error"] is not None
-    assert "token" in st["error"].lower() or "expired" in st["error"].lower() or st["error"] != ""
+    assert st["error"] is True  # bool — error присутствует
 
     await poller.stop()
 

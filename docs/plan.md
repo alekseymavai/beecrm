@@ -86,3 +86,33 @@
 | `redirect_slashes=False` в FastAPI обязателен при nginx proxy (иначе 307 редиректы ломают PUT/PATCH) | medium |
 | Import endpoint должен использовать `Depends(get_integram)`, а не `get_integram(request)` напрямую | medium |
 | CORS_ORIGINS должны быть в .env — хардкод IP затрудняет смену окружения | high |
+
+---
+
+## Спринт аудита 13.04.2026
+
+AgentForge sprint — post-audit fixes по результатам глубокого аудита архитектуры.
+
+| # | Задача | Тип | Статус |
+|---|--------|-----|--------|
+| 1 | Убрать reverse import apiary из services/notify_service.py | ARCH | ✅ done |
+| 2 | DI recipient_provider в NotifyService | ARCH | ✅ done |
+| 3 | Добавить get_active_user_tg_ids() в apiary/integram_apiary.py | PERF | ✅ done |
+| 4 | apiary/config.py — заменить os.environ[] на .get() + check() | SEC | ✅ done |
+| 5 | groq_client.py — убрать raw_text из логов | SEC | ✅ done |
+| 6 | uds/poller.status() — скрыть детали ошибок (bool вместо строки) | SEC | ✅ done |
+| 7 | settings.py — токены уже безопасны (os.environ.get), задокументировано | SEC | ✅ n/a |
+| 8 | Создать tests/test_mappers.py — 41 тест для integram/mappers.py | TEST | ✅ done |
+| 9 | Создать tests/test_auth.py — тесты аутентификации API | TEST | ✅ done |
+| 10 | Обновить docs/architecture.md | DOCS | ✅ done |
+| 11 | Создать README.md | DOCS | ✅ done |
+
+**Итог:** 113 тестов (было 70 до спринта), 0 регрессий.
+
+### ADR-011 — DI для recipient_provider в NotifyService
+
+**Проблема:** services/notify_service.py импортировал apiary.config напрямую — ядро зависело от плагина.
+
+**Решение:** NotifyService принимает `recipient_provider: Callable | None` через конструктор. В main.py передаётся `get_active_user_tg_ids` из apiary/integram_apiary.py. При `recipient_provider=None` — fallback на admin_tg_id.
+
+**Статус:** accepted

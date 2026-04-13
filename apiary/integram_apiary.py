@@ -234,3 +234,43 @@ async def get_last_inspections(
     except IntegramError as exc:
         logger.error("get_last_inspections(%s): %s", hive_name, exc)
         return []
+
+
+# ── Notify helpers ────────────────────────────────────────────────────────────
+
+async def get_active_user_tg_ids(client: IntegramClient) -> list[int]:
+    """Получить tg_id всех активных пользователей бота. При ошибке — пустой список."""
+    if not config.APIARY_T_USERS or not config.COL_USER_TG_ID:
+        return []
+    try:
+        rows = await client.list_objects(config.APIARY_T_USERS, page_size=200)
+        result: list[int] = []
+        for row in rows:
+            # Если list_objects вернул requisites — читаем напрямую (без N+1)
+            # Если нет — fallback на get_object
+            is_active = _row_value(row, config.COL_USER_ACTIVE)
+            tg_id_raw = _row_value(row, config.COL_USER_TG_ID)
+            if not is_active or not tg_id_raw:
+                # list_objects не включил requisites — получаем полный объект
+                if config.COL_USER_ACTIVE:
+                    full = await client.get_object(row["id"])
+                    if full is None:
+                        continue
+                    reqs = full.get("requisites", {})
+                    is_active = reqs.get(str(config.COL_USER_ACTIVE))
+                    if not is_active:
+                        continue
+                    tg_id_raw = reqs.get(str(config.COL_USER_TG_ID))
+                else:
+                    tg_id_raw = _row_value(row, config.COL_USER_TG_ID)
+            if not is_active:
+                continue
+            if tg_id_raw:
+                try:
+                    result.append(int(tg_id_raw))
+                except (ValueError, TypeError):
+                    logger.warning("get_active_user_tg_ids: невалидный tg_id=%r", tg_id_raw)
+        return result
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("get_active_user_tg_ids: ошибка запроса: %s", exc)
+        return []

@@ -74,7 +74,7 @@ async def extract_record(text: str, last_records: list[dict[str, Any]]) -> dict[
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:
-        logger.warning("extract_record: JSON parse error: %s | raw=%r", exc, raw[:200])
+        logger.warning("extract_record: JSON parse error: %s | raw_len=%d", exc, len(raw))
         return {
             "requires_clarification": True,
             "clarification_question": "Не смог распознать структуру осмотра. Попробуйте описать кратко: улей, матка, расплод, мёд.",

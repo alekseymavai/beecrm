@@ -50,7 +50,7 @@ class UDSPoller:
         return {
             "running": running,
             "last_poll": self._last_poll,
-            "error": self._error,
+            "error": bool(self._error),
             "synced_count": self._synced_count,
         }
 

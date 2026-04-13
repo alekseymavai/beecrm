@@ -30,10 +30,11 @@ async def lifespan(app: FastAPI):
     if settings.BEEBOTLITE_TOKEN:
         try:
             from aiogram import Bot
+            from apiary.integram_apiary import get_active_user_tg_ids
             from services.notify_service import NotifyService
             admin_tg_id = int(settings.BEEBOTLITE_ADMIN_TG_ID) if settings.BEEBOTLITE_ADMIN_TG_ID else 0
             bot = Bot(token=settings.BEEBOTLITE_TOKEN)
-            notify_service = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_tg_id)
+            notify_service = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_tg_id, recipient_provider=get_active_user_tg_ids)
             app.state.bot = bot
         except Exception as exc:
             import logging

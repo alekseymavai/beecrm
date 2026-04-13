@@ -20,10 +20,18 @@ logger = logging.getLogger(__name__)
 class NotifyService:
     """Рассылка Telegram-уведомлений команде пчеловода."""
 
-    def __init__(self, bot: "Bot", igm: "IntegramClient", admin_tg_id: int = 0) -> None:
+    def __init__(
+        self,
+        bot: "Bot",
+        igm: "IntegramClient",
+        admin_tg_id: int = 0,
+        recipient_provider=None,
+    ) -> None:
         self._bot = bot
         self._igm = igm
         self._admin_tg_id = admin_tg_id
+        # async callable (client: IntegramClient) -> list[int]
+        self._recipient_provider = recipient_provider
 
     async def notify_new_order(self, parsed: dict) -> None:
         """Отправить уведомление о новом UDS-заказе всем активным пользователям.
@@ -42,53 +50,15 @@ class NotifyService:
             logger.warning("notify_new_order: ошибка рассылки: %s", exc)
 
     async def _get_recipients(self) -> list[int]:
-        """Получить список chat_id активных пользователей.
-
-        Источник: Integram APIARY_T_USERS (если настроен) или ADMIN_TG_ID.
-        chat_id берётся только из доверенного источника — Integram или env.
-        """
-        # Импортируем здесь, чтобы не тянуть apiary-зависимости в uds/ напрямую
-        try:
-            from apiary import config as apiary_config
-        except ImportError:
-            logger.warning("_get_recipients: модуль apiary недоступен — fallback на admin")
-            return [self._admin_tg_id] if self._admin_tg_id else []
-
-        if not apiary_config.APIARY_T_USERS or not apiary_config.COL_USER_TG_ID:
-            # Таблица пользователей не настроена — только admin
-            if self._admin_tg_id:
-                return [self._admin_tg_id]
-            return []
-
-        try:
-            rows = await self._igm.list_objects(apiary_config.APIARY_T_USERS, page_size=200)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("_get_recipients: ошибка запроса к Integram: %s — fallback на admin", exc)
-            return [self._admin_tg_id] if self._admin_tg_id else []
-
-        recipients: list[int] = []
-        for row in rows:
-            # Получаем полный объект, чтобы иметь requisites
+        """Получить список chat_id активных пользователей."""
+        if self._recipient_provider is not None:
             try:
-                full = await self._igm.get_object(row["id"])
-                if full is None:
-                    continue
-                reqs = full.get("requisites", {})
-                is_active = reqs.get(str(apiary_config.COL_USER_ACTIVE))
-                if not is_active:
-                    continue
-                tg_id_raw = reqs.get(str(apiary_config.COL_USER_TG_ID))
-                if tg_id_raw:
-                    try:
-                        recipients.append(int(tg_id_raw))
-                    except (ValueError, TypeError):
-                        logger.warning("_get_recipients: невалидный tg_id=%r — пропуск", tg_id_raw)
+                recipients = await self._recipient_provider(self._igm)
+                if recipients:
+                    return recipients
             except Exception as exc:  # noqa: BLE001
-                logger.warning("_get_recipients: ошибка при обработке записи %s: %s", row.get("id"), exc)
-
-        if not recipients and self._admin_tg_id:
-            return [self._admin_tg_id]
-        return recipients
+                logger.warning("_get_recipients: ошибка провайдера: %s — fallback на admin", exc)
+        return [self._admin_tg_id] if self._admin_tg_id else []
 
     async def _send(self, chat_id: int, text: str) -> None:
         """Отправить сообщение в один чат. Ошибка логируется без sensitive данных."""

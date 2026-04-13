@@ -1,6 +1,6 @@
 # BEECRM — Архитектура
 
-> Обновлено командой AgentForge · 09.04.2026
+> Обновлено командой AgentForge · 13.04.2026
 > ADR-001: FastAPI + Integram API (хранилище)
 
 ---
@@ -167,13 +167,12 @@ NEW → CONFIRMED → IN_PROGRESS → DONE
 ```
 BEECRM/
 ├── CLAUDE.md
-├── context.yaml
 ├── settings.py              ← секреты из env, startup_check()
 ├── main.py                  ← FastAPI app, lifespan + IntegramClient.authenticate()
 ├── integram/
 │   ├── client.py            ← async httpx клиент Integram API (+ import_xlsx, T_PRODUCTS)
 │   ├── deps.py              ← get_integram() FastAPI Depends
-│   ├── mappers.py           ← dict → Pydantic схемы (+ igm_to_product, igm_to_event)
+│   ├── mappers.py           ← igm_to_client, igm_to_order, igm_to_product, igm_to_event — конвертация Integram dict → домен
 │   └── exceptions.py        ← IntegramError, IntegramNotFoundError
 ├── schemas/
 │   ├── enums.py             ← OrderStatus, OrderSource
@@ -187,6 +186,7 @@ BEECRM/
 │   └── table_adapter.py     ← + from_xlsx_row()
 ├── services/
 │   ├── fsm.py               ← ALLOWED_TRANSITIONS, transition(), FSMError
+│   ├── notify_service.py    ← send_new_order_notification() — уведомления команде через BEEBOTLITE
 │   ├── order_service.py     ← create_order(), transition_status(), get_history()
 │   └── client_service.py    ← find_or_create() (дедупликация) + get_history()
 ├── api/
@@ -224,12 +224,11 @@ BEECRM/
 
 | Переменная | Обязательна | Описание |
 |------------|-------------|----------|
-| `SECRET_KEY` | ✅ | Секретный ключ приложения |
 | `API_KEY` | ✅ | X-API-Key для аутентификации |
 | `INTEGRAM_LOGIN` | ✅ | Email аккаунта Integram |
 | `INTEGRAM_PASSWORD` | ✅ | Пароль аккаунта Integram |
 | `INTEGRAM_WORKSPACE` | — | Slug воркспейса (по умолчанию: `beecrm`) |
-| `INTEGRAM_T_EVENTS` | — | typeId child-таблицы OrderEvent (по умолчанию: `0` = выключено) |
+| `INTEGRAM_T_EVENTS` | — | typeId child-таблицы OrderEvent (по умолчанию: `37`) |
 
 ---
 
@@ -238,6 +237,7 @@ BEECRM/
 ```
 Интернет
     │
+    ├─▶ https://usadbadmitrov.ru  (nginx + Certbot TLS → :8000 API)
     ├─▶ http://178.253.39.215:8000  (API прямой доступ)
     └─▶ http://178.253.39.215:8080  (Dashboard Vue SPA, nginx)
               │
@@ -257,9 +257,9 @@ BEECRM/
 
 | # | Блокер | Статус |
 |---|--------|--------|
-| 1 | HTTP, не HTTPS | ⏳ ждём DNS api.ai2o.online → 178.253.39.215 |
-| 2 | CORS жёстко захардкожен в main.py | ⚠️ нет env-переменной CORS_ORIGINS |
-| 3 | T_EVENTS по умолчанию 0 (история выключена в проде) | ⚠️ требует явной настройки .env |
+| 1 | HTTP, не HTTPS | ✅ done — nginx + Certbot на usadbadmitrov.ru |
+| 2 | CORS жёстко захардкожен в main.py | ✅ done |
+| 3 | BASE_url_hardcode | ✅ done (ADR-007) |
 
 ## Fragile Zones
 
@@ -268,10 +268,7 @@ BEECRM/
 | `client_dedup` | Дедупликация по phone/email через Integram search | ✅ реализовано |
 | `no_transactions` | Integram не поддерживает ACID | ⚠️ compensating actions |
 | `uds_sync` | UDS polling: seen_ids in-memory — сбрасывается при рестарте | ⚠️ заказы до рестарта не дедуплицируются |
-| `order_addon` | Дозаказ должен добавляться к существующему | ⏳ не начато |
-| `client_history_query` | get_history в client_service: загружает все заказы (page_size=100), фильтрует в памяти | ⚠️ не масштабируется при >100 заказах |
-| `import_auth` | /import/excel/preview не использует Depends(get_integram) — вызывает get_integram(request) напрямую | ⚠️ нарушение паттерна зависимостей |
-| `BASE_url_hardcode` | IntegramClient.BASE захардкожен как строка с workspace | ⚠️ нет workspace-параметра |
+| `order_addon` | Дозаказ должен добавляться к существующему | ⏳ не реализован |
 
 ---
 

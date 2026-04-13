@@ -1,15 +1,18 @@
 """apiary/config.py — конфигурация модуля BEEBOTLITE."""
 
+import logging
 import os
 
-BOT_TOKEN: str = os.environ["BEEBOTLITE_TOKEN"]
-GROQ_API_KEY: str = os.environ["GROQ_API_KEY"]
+logger = logging.getLogger(__name__)
+
+BOT_TOKEN: str = os.environ.get("BEEBOTLITE_TOKEN", "")
+GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL: str = os.environ.get("GROQ_BASE_URL", "https://api.groq.com")
-ADMIN_TG_ID: int = int(os.environ["BEEBOTLITE_ADMIN_TG_ID"])
+ADMIN_TG_ID: int = int(os.environ.get("BEEBOTLITE_ADMIN_TG_ID", "0") or "0")
 
 # Учётные данные Integram (берутся из общих настроек)
-INTEGRAM_LOGIN: str = os.environ["INTEGRAM_LOGIN"]
-INTEGRAM_PASSWORD: str = os.environ["INTEGRAM_PASSWORD"]
+INTEGRAM_LOGIN: str = os.environ.get("INTEGRAM_LOGIN", "")
+INTEGRAM_PASSWORD: str = os.environ.get("INTEGRAM_PASSWORD", "")
 INTEGRAM_WORKSPACE: str = os.environ.get("INTEGRAM_WORKSPACE", "beecrm")
 
 # ── typeId таблиц пасеки (заполнить после create_tables.py) ──────────────────
@@ -47,3 +50,16 @@ COL_INSP_NEEDS_ATTENTION: int = int(os.environ.get("APIARY_COL_INSP_NEEDS_ATTENT
 COL_INSP_IS_DRAFT: int = int(os.environ.get("APIARY_COL_INSP_IS_DRAFT", "0"))
 COL_INSP_SESSION_ID: int = int(os.environ.get("APIARY_COL_INSP_SESSION_ID", "0"))
 COL_INSP_RAW_TEXT: int = int(os.environ.get("APIARY_COL_INSP_RAW_TEXT", "0"))
+
+
+def check() -> None:
+    """Проверить конфиг. WARNING если токен не задан — не raises (модуль опциональный)."""
+    if not BOT_TOKEN:
+        logger.warning(
+            "BEEBOTLITE_TOKEN не задан — BEEBOTLITE бот отключён. "
+            "Задайте BEEBOTLITE_TOKEN в .env для активации."
+        )
+    if not GROQ_API_KEY:
+        logger.warning(
+            "GROQ_API_KEY не задан — голосовые осмотры недоступны."
+        )

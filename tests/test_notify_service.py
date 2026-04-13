@@ -2,15 +2,8 @@
 
 from __future__ import annotations
 
-import os
-import sys
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-
-# apiary/config.py читает env при импорте через os.environ[] — установим заглушки
-os.environ.setdefault("BEEBOTLITE_TOKEN", "test:token")
-os.environ.setdefault("BEEBOTLITE_ADMIN_TG_ID", "0")
-os.environ.setdefault("GROQ_API_KEY", "test-groq-key")
+from unittest.mock import AsyncMock, MagicMock
 
 from services.notify_service import NotifyService, _format_message
 from tests.mocks.integram_mock import FakeIntegramClient
@@ -65,15 +58,13 @@ def test_format_message_without_total():
 
 @pytest.mark.asyncio
 async def test_notify_uses_admin_when_table_not_configured():
-    """Если APIARY_T_USERS=0 — уведомление только admin_tg_id."""
+    """Если recipient_provider не задан — уведомление только admin_tg_id."""
     bot = _make_bot()
     igm = FakeIntegramClient()
     admin_id = 111222333
 
-    with patch("apiary.config.APIARY_T_USERS", 0), \
-         patch("apiary.config.COL_USER_TG_ID", 0):
-        svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id)
-        await svc.notify_new_order(_make_parsed())
+    svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id)
+    await svc.notify_new_order(_make_parsed())
 
     bot.send_message.assert_awaited_once()
     call_kwargs = bot.send_message.call_args
@@ -89,11 +80,9 @@ async def test_send_error_does_not_propagate():
     bot.send_message.side_effect = RuntimeError("Telegram unreachable")
     igm = FakeIntegramClient()
 
-    with patch("apiary.config.APIARY_T_USERS", 0), \
-         patch("apiary.config.COL_USER_TG_ID", 0):
-        svc = NotifyService(bot=bot, igm=igm, admin_tg_id=999888777)
-        # Не должен вызвать исключение
-        await svc.notify_new_order(_make_parsed())
+    svc = NotifyService(bot=bot, igm=igm, admin_tg_id=999888777)
+    # Не должен вызвать исключение
+    await svc.notify_new_order(_make_parsed())
 
     # send_message был вызван (попытка была)
     bot.send_message.assert_awaited_once()
@@ -103,34 +92,16 @@ async def test_send_error_does_not_propagate():
 
 @pytest.mark.asyncio
 async def test_notify_sends_to_active_users_from_integram():
-    """Уведомление отправляется всем активным пользователям из APIARY_T_USERS."""
+    """Уведомление отправляется всем активным пользователям через recipient_provider."""
     bot = _make_bot()
     igm = FakeIntegramClient()
-
-    T_USERS = 201
-    COL_TG_ID = 301
-    COL_ACTIVE = 302
     admin_id = 999
 
-    # Создаём 2 активных и 1 неактивного пользователя в fake Integram
-    await igm.create_object(T_USERS, value="user1", requisites={
-        str(COL_TG_ID): "111",
-        str(COL_ACTIVE): True,
-    })
-    await igm.create_object(T_USERS, value="user2", requisites={
-        str(COL_TG_ID): "222",
-        str(COL_ACTIVE): True,
-    })
-    await igm.create_object(T_USERS, value="user3_inactive", requisites={
-        str(COL_TG_ID): "333",
-        str(COL_ACTIVE): False,
-    })
+    async def fake_provider(client):
+        return [111, 222]
 
-    with patch("apiary.config.APIARY_T_USERS", T_USERS), \
-         patch("apiary.config.COL_USER_TG_ID", COL_TG_ID), \
-         patch("apiary.config.COL_USER_ACTIVE", COL_ACTIVE):
-        svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id)
-        await svc.notify_new_order(_make_parsed())
+    svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id, recipient_provider=fake_provider)
+    await svc.notify_new_order(_make_parsed())
 
     assert bot.send_message.await_count == 2
     sent_ids = {c.kwargs["chat_id"] for c in bot.send_message.call_args_list}
@@ -144,26 +115,16 @@ async def test_notify_sends_to_active_users_from_integram():
 
 @pytest.mark.asyncio
 async def test_notify_fallback_to_admin_when_no_active_users():
-    """Если активных пользователей нет — уведомление только admin."""
+    """Если провайдер возвращает пустой список — уведомление только admin."""
     bot = _make_bot()
     igm = FakeIntegramClient()
-
-    T_USERS = 201
-    COL_TG_ID = 301
-    COL_ACTIVE = 302
     admin_id = 777666
 
-    # Только неактивный пользователь
-    await igm.create_object(T_USERS, value="user_inactive", requisites={
-        str(COL_TG_ID): "555",
-        str(COL_ACTIVE): False,
-    })
+    async def empty_provider(client):
+        return []
 
-    with patch("apiary.config.APIARY_T_USERS", T_USERS), \
-         patch("apiary.config.COL_USER_TG_ID", COL_TG_ID), \
-         patch("apiary.config.COL_USER_ACTIVE", COL_ACTIVE):
-        svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id)
-        await svc.notify_new_order(_make_parsed())
+    svc = NotifyService(bot=bot, igm=igm, admin_tg_id=admin_id, recipient_provider=empty_provider)
+    await svc.notify_new_order(_make_parsed())
 
     bot.send_message.assert_awaited_once()
     assert bot.send_message.call_args.kwargs["chat_id"] == admin_id
