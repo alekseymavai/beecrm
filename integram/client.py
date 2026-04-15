@@ -21,6 +21,18 @@ class IntegramClient:
     T_SOURCES  = 15
     T_PRODUCTS = 52
 
+    # ── Users ─────────────────────────────────────────────────────────────────
+    T_USER_ROLES    = 230  # «Роли пользователей»
+    T_USERS         = 233  # «Пользователи CRM»
+    ROLE_ADMIN_ID   = 231  # запись «Администратор»
+    ROLE_MANAGER_ID = 232  # запись «Менеджер»
+    ROLE_NAMES: dict[int, str] = {231: "Администратор", 232: "Менеджер"}
+
+    COL_USER_LOGIN  = 234
+    COL_USER_HASH   = 235
+    COL_USER_ROLE   = 236
+    COL_USER_ACTIVE = 237
+
     COL_PRODUCT_PRICE       = 53
     COL_PRODUCT_CATEGORY    = 54
     COL_PRODUCT_STOCK       = 55

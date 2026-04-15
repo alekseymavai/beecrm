@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 # Единственный источник лимита payload — импортируется в схемы и адаптеры
 MAX_PAYLOAD_BYTES: int = 65536
 
-REQUIRED_VARS = ("API_KEY", "INTEGRAM_LOGIN", "INTEGRAM_PASSWORD")
+REQUIRED_VARS = ("API_KEY", "INTEGRAM_LOGIN", "INTEGRAM_PASSWORD", "JWT_SECRET")
 
 API_KEY: str = ""
 INTEGRAM_LOGIN: str = ""
@@ -14,6 +14,8 @@ INTEGRAM_PASSWORD: str = ""
 INTEGRAM_WORKSPACE: str = "beecrm"
 INTEGRAM_T_EVENTS: int = 37   # ID child-таблицы OrderEvent (typeId 37); 0 = отключено
 CORS_ORIGINS: list[str] = []
+JWT_SECRET: str = ""
+JWT_EXPIRE_MINUTES: int = 1440  # 24 часа
 
 
 def startup_check() -> None:
@@ -30,6 +32,9 @@ def startup_check() -> None:
     INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "37"))
     cors_raw = os.environ.get("CORS_ORIGINS", "")
     CORS_ORIGINS = [o.strip() for o in cors_raw.split(",") if o.strip()]
+    global JWT_SECRET, JWT_EXPIRE_MINUTES
+    JWT_SECRET = os.environ["JWT_SECRET"]
+    JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "1440"))
 
     if INTEGRAM_T_EVENTS == 0:
         logger.warning("INTEGRAM_T_EVENTS=0 — история заказов отключена. Задайте INTEGRAM_T_EVENTS в .env.")

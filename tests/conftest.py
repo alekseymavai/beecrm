@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 os.environ.setdefault("API_KEY", "test-api-key")
 os.environ.setdefault("INTEGRAM_LOGIN", "test-login")
 os.environ.setdefault("INTEGRAM_PASSWORD", "test-password")
+os.environ.setdefault("JWT_SECRET", "test-jwt-secret-for-tests-only")
 
 from integram.deps import get_integram  # noqa: E402
 from main import app  # noqa: E402
