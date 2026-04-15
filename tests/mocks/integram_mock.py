@@ -16,12 +16,7 @@ class FakeIntegramClient:
     T_SOURCES = 15
     T_PRODUCTS = 52
 
-    T_USER_ROLES    = 200   # фиктивный ID для тестов
     T_USERS         = 201
-    ROLE_ADMIN_ID   = 500
-    ROLE_MANAGER_ID = 501
-    ROLE_NAMES: dict[int, str] = {500: "Администратор", 501: "Менеджер"}
-
     COL_USER_LOGIN  = 202
     COL_USER_HASH   = 203
     COL_USER_ROLE   = 204

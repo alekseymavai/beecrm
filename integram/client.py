@@ -21,17 +21,12 @@ class IntegramClient:
     T_SOURCES  = 15
     T_PRODUCTS = 52
 
-    # ── Users ─────────────────────────────────────────────────────────────────
-    T_USER_ROLES    = 230  # «Роли пользователей» (Integram UI, read-only via V2)
-    T_USERS         = 72   # «Пользователи бота» — V2-writable таблица для auth
-    ROLE_ADMIN_ID   = 231
-    ROLE_MANAGER_ID = 232
-    ROLE_NAMES: dict[int, str] = {231: "Администратор", 232: "Менеджер"}
-
-    COL_USER_LOGIN  = 73   # tg_id — используется как CRM-логин
-    COL_USER_HASH   = 111  # crm_hash (добавлена в таблицу 72)
-    COL_USER_ROLE   = 112  # crm_role (добавлена в таблицу 72, текстовое значение)
-    COL_USER_ACTIVE = 76   # is_active
+    # ── Users (таблица «Пользователи CRM», typeId 138) ─────────────────────
+    T_USERS         = 138
+    COL_USER_LOGIN  = 139  # login (text)
+    COL_USER_HASH   = 140  # password_hash (text)
+    COL_USER_ROLE   = 141  # role (text)
+    COL_USER_ACTIVE = 142  # is_active (bool)
 
     COL_PRODUCT_PRICE       = 53
     COL_PRODUCT_CATEGORY    = 54
