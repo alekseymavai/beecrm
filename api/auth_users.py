@@ -53,7 +53,7 @@ def _make_token(username: str, role: str) -> str:
 
 
 async def _find_user(igm: IntegramClient, login: str) -> dict | None:
-    return await igm.find_by_field(igm.T_USERS, igm.COL_USER_LOGIN, login)
+    return await igm.find_user_by_login(login)
 
 
 @router.post("/login", response_model=TokenResponse)

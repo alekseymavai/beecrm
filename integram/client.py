@@ -176,6 +176,25 @@ class IntegramClient:
         except (IntegramNotFoundError, IntegramError):
             return None
 
+    async def find_user_by_login(self, login: str) -> dict | None:
+        """Поиск пользователя в T_USERS по логину (client-side, т.к. V2 не фильтрует по реквизитам).
+
+        Получаем все записи таблицы T_USERS (их обычно мало),
+        для каждой загружаем полный объект с реквизитами и сравниваем COL_USER_LOGIN.
+        """
+        try:
+            rows = await self.list_objects(self.T_USERS, page_size=200)
+        except (IntegramNotFoundError, IntegramError):
+            return None
+        for row in rows:
+            obj = await self.get_object(row["id"])
+            if obj is None:
+                continue
+            reqs = obj.get("requisites") or {}
+            if str(reqs.get(str(self.COL_USER_LOGIN), "")) == str(login):
+                return obj
+        return None
+
     async def list_children(self, child_typeId: int, parent_id: int) -> list[dict]:
         """Child-записи для конкретного объекта."""
         return await self.list_objects(child_typeId, parent_id=parent_id, page_size=200)

@@ -151,6 +151,9 @@ class FakeIntegramClient:
                 return obj
         return None
 
+    async def find_user_by_login(self, login: str) -> dict | None:
+        return await self.find_by_field(self.T_USERS, self.COL_USER_LOGIN, login)
+
     async def create_order_with_event(
         self,
         client_id: int,
