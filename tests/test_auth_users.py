@@ -45,7 +45,7 @@ class TestLogin:
                 requisites={
                     str(igm.COL_USER_LOGIN): login,
                     str(igm.COL_USER_HASH): hashed,
-                    str(igm.COL_USER_ROLE): igm.ROLE_MANAGER_ID,
+                    str(igm.COL_USER_ROLE): "Менеджер",
                     str(igm.COL_USER_ACTIVE): True,
                 },
             )
@@ -77,7 +77,7 @@ class TestLogin:
                 requisites={
                     str(igm.COL_USER_LOGIN): "inactive",
                     str(igm.COL_USER_HASH): hashed,
-                    str(igm.COL_USER_ROLE): igm.ROLE_MANAGER_ID,
+                    str(igm.COL_USER_ROLE): "Менеджер",
                     str(igm.COL_USER_ACTIVE): False,
                 },
             )

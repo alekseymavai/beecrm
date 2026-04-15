@@ -74,8 +74,7 @@ async def login(
     if not is_active:
         raise HTTPException(status_code=403, detail="Аккаунт деактивирован")
 
-    role_id = req.get(str(igm.COL_USER_ROLE))
-    role_name = igm.ROLE_NAMES.get(int(role_id), "Менеджер") if role_id else "Менеджер"
+    role_name = req.get(str(igm.COL_USER_ROLE), "Менеджер") or "Менеджер"
 
     return TokenResponse(
         access_token=_make_token(body.login, role_name),
@@ -100,7 +99,7 @@ async def register(
         requisites={
             str(igm.COL_USER_LOGIN): body.login,
             str(igm.COL_USER_HASH): hashed,
-            str(igm.COL_USER_ROLE): igm.ROLE_MANAGER_ID,
+            str(igm.COL_USER_ROLE): "Менеджер",
             str(igm.COL_USER_ACTIVE): True,
         },
     )
