@@ -69,10 +69,10 @@ function logout() {
         <!-- Footer -->
         <div class="sidebar-footer">
             <div class="sidebar-user">
-                <div class="sidebar-avatar">A</div>
+                <div class="sidebar-avatar">{{ (auth.username || 'U')[0].toUpperCase() }}</div>
                 <div class="sidebar-user-info">
-                    <div class="sidebar-user-name">Администратор</div>
-                    <div class="sidebar-user-role">API ключ</div>
+                    <div class="sidebar-user-name">{{ auth.username || 'Пользователь' }}</div>
+                    <div class="sidebar-user-role">{{ auth.role || 'Менеджер' }}</div>
                 </div>
             </div>
             <button class="sidebar-logout" @click="logout">

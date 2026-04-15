@@ -1,10 +1,22 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
+function isTokenValid() {
+    const token = localStorage.getItem('beecrm_jwt');
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+}
+
 const router = createRouter({
     history: createWebHistory(),
     routes: [
         { path: '/login', component: () => import('@/views/LoginView.vue') },
+        { path: '/register', component: () => import('@/views/RegisterView.vue') },
         {
             path: '/',
             component: AppLayout,
@@ -22,9 +34,8 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-    if (to.path === '/login') return true;
-    const key = localStorage.getItem('beecrm_api_key');
-    if (!key) return '/login';
+    if (to.path === '/login' || to.path === '/register') return true;
+    if (!isTokenValid()) return '/login';
     return true;
 });
 

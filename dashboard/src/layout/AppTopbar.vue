@@ -1,9 +1,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth.js';
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const SECTION = { '/orders': 'Заказы', '/clients': 'Клиенты', '/products': 'Товары' };
 
@@ -44,7 +46,7 @@ const breadcrumbs = computed(() => {
                 <i class="pi pi-bell"></i>
             </button>
             <div class="topbar-divider"></div>
-            <div class="topbar-avatar">A</div>
+            <div class="topbar-avatar">{{ (auth.username || 'U')[0].toUpperCase() }}</div>
         </div>
     </header>
 </template>

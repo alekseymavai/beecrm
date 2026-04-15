@@ -6,8 +6,8 @@ const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-    const key = localStorage.getItem('beecrm_api_key') || import.meta.env.VITE_API_KEY || '';
-    config.headers['X-API-Key'] = key;
+    const token = localStorage.getItem('beecrm_jwt') || '';
+    if (token) config.headers['Authorization'] = `Bearer ${token}`;
     return config;
 });
 
