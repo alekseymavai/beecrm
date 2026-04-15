@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import settings
 import uds.config as uds_config
 from api.auth import verify_api_key
+from api.auth_users import router as auth_users_router
 from api.clients import router as clients_router
 from api.import_excel import router as import_router
 from api.orders import router as orders_router
@@ -60,7 +61,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
-    allow_headers=["X-API-Key", "Content-Type", "Cache-Control"],
+    allow_headers=["X-API-Key", "Authorization", "Content-Type", "Cache-Control"],
 )
 
 
@@ -75,3 +76,4 @@ app.include_router(orders_router, dependencies=_auth)
 app.include_router(import_router, dependencies=_auth)
 app.include_router(products_router, dependencies=_auth)
 app.include_router(uds_router)  # без _auth — router сам управляет auth
+app.include_router(auth_users_router)  # публичный — login/register выдают JWT

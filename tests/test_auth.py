@@ -24,3 +24,23 @@ class TestApiKeyAuth:
         """Верный ключ → не 403 (эндпоинт отвечает, аутентификация пройдена)."""
         resp = client.get("/clients/", headers={"X-API-Key": API_KEY})
         assert resp.status_code != 403
+
+
+class TestJwtAuth:
+    def test_jwt_allows_access_to_clients(self, client):
+        import os
+        from datetime import datetime, timedelta, timezone
+        from jose import jwt as jose_jwt
+
+        secret = os.environ.get("JWT_SECRET", "test-secret-key-32-chars-minimum!!")
+        token = jose_jwt.encode(
+            {"sub": "testuser", "role": "Администратор",
+             "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+            secret, algorithm="HS256",
+        )
+        resp = client.get("/clients/", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code != 403
+
+    def test_invalid_jwt_returns_403(self, client):
+        resp = client.get("/clients/", headers={"Authorization": "Bearer bad.token.here"})
+        assert resp.status_code == 403
