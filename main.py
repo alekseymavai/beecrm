@@ -7,6 +7,7 @@ import settings
 import uds.config as uds_config
 from api.auth import verify_api_key
 from api.auth_users import router as auth_users_router
+from api.beelog import router as beelog_router
 from api.clients import router as clients_router
 from api.import_excel import router as import_router
 from api.orders import router as orders_router
@@ -71,6 +72,7 @@ async def health():
 
 
 _auth = [Depends(verify_api_key)]
+app.include_router(beelog_router, dependencies=_auth)
 app.include_router(clients_router, dependencies=_auth)
 app.include_router(orders_router, dependencies=_auth)
 app.include_router(import_router, dependencies=_auth)
