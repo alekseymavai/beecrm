@@ -1,0 +1,102 @@
+- application [ref=e1]:
+  - iframe [ref=e2]:
+    
+  - iframe [ref=e3]:
+    
+  - banner "Menüleiste" [ref=e4]:
+    - generic [ref=e7]:
+      - link "Google Sheets-Startbildschirm" [ref=e9] [cursor=pointer]:
+        - /url: https://docs.google.com/spreadsheets/?usp=sheets_web
+      - generic [ref=e16]:
+        - generic "Заказы ВК и ИНСТ Усадьба Дмитровых" [ref=e18]:
+          - generic [ref=e20]: Заказы ВК и ИНСТ Усадьба Дмитровых
+          - 'button "Dokumentstatus: In Google Drive gespeichert." [ref=e24]'
+        - generic [ref=e31]:
+          - button "2 ausgeblendet 2 Betrachter insgesamt" [ref=e35] [cursor=pointer]:
+            - generic [ref=e38]: "2"
+          - button "Alle Kommentare anzeigen" [ref=e42] [cursor=pointer]
+          - button "Freigeben. Jeder, der über den Link verfügt. Jeder, der über den Link verfügt, ist zum Zugriff berechtigt. Es ist keine Anmeldung erforderlich." [disabled] [ref=e46]
+          - link "Anmelden" [ref=e51] [cursor=pointer]:
+            - /url: https://accounts.google.com/ServiceLogin?service=wise&passive=1209600&osid=1&continue=https://docs.google.com/spreadsheets/d/1dpOVRDffHIpTZoDYgCcSTevwb4DZH4rcff3tcFNG_YE/edit?usp%3Dsharing&followup=https://docs.google.com/spreadsheets/d/1dpOVRDffHIpTZoDYgCcSTevwb4DZH4rcff3tcFNG_YE/edit?usp%3Dsharing&ltmpl=sheets&ec=GAZAmwI
+    - generic [ref=e52]:
+      - menubar [ref=e54]:
+        - menuitem "Datei" [ref=e55] [cursor=pointer]
+        - menuitem "Bearbeiten" [ref=e56] [cursor=pointer]
+        - menuitem "Ansicht" [ref=e57] [cursor=pointer]
+        - menuitem "Einfügen" [ref=e58] [cursor=pointer]
+        - menuitem "Format" [ref=e59] [cursor=pointer]
+        - menuitem "Daten" [ref=e60] [cursor=pointer]
+        - menuitem "Tools" [ref=e61] [cursor=pointer]
+        - menuitem "Erweiterungen" [ref=e62] [cursor=pointer]
+        - menuitem "Hilfe" [ref=e63] [cursor=pointer]
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - toolbar "In Menüs suchen (Alt+/)" [ref=e66]:
+            - combobox "Menüs" [ref=e68]
+          - toolbar "Festnetz" [ref=e69]:
+            - button "Rückgängig machen (Strg+Z)" [ref=e70] [cursor=pointer]
+            - button "Wiederholen (Strg+Y)" [ref=e75] [cursor=pointer]
+            - button "Drucken (Strg+P)" [ref=e80] [cursor=pointer]
+            - button "Format übertragen" [ref=e85] [cursor=pointer]
+            - combobox "Zoom" [ref=e90] [cursor=pointer]:
+              - option "Liste Zoom. 100% ausgewählt." [selected] [ref=e93]:
+                - textbox "Zoom" [ref=e94]: 100%
+            - separator [disabled] [ref=e98]
+            - button "Als Währung formatieren" [ref=e99] [cursor=pointer]:
+              - generic [ref=e101]: р.
+            - button "Als Prozentzahl formatieren" [ref=e102] [cursor=pointer]:
+              - generic [ref=e104]: "%"
+            - button "Anzahl der Dezimalstellen verringern" [ref=e105] [cursor=pointer]
+            - button "Anzahl der Dezimalstellen erhöhen" [ref=e110] [cursor=pointer]
+            - button "Weitere Formate" [ref=e115] [cursor=pointer]:
+              - generic [ref=e118]: "123"
+            - separator [disabled] [ref=e119]
+            - listbox "Schriftart" [ref=e120] [cursor=pointer]:
+              - option "Liste Schriftart. Times New Roman ausgewählt." [selected] [ref=e123]: Times New Roman
+            - separator [disabled] [ref=e127]
+            - button "Schrift verkleinern (Strg+Umschalttaste+Komma)" [ref=e128] [cursor=pointer]
+            - combobox "Schriftgröße" [ref=e133] [cursor=pointer]:
+              - option "Liste Schriftgröße. 10 ausgewählt." [selected] [ref=e136]:
+                - textbox "Schriftgröße" [ref=e137]: "10"
+            - button "Schrift vergrößern (Strg+Umschalttaste+Punkt)" [ref=e138] [cursor=pointer]
+            - separator [disabled] [ref=e143]
+            - button "Mehr" [ref=e144] [cursor=pointer]
+        - toolbar "Modus und Ansicht" [ref=e151]:
+          - button "Menüs ausblenden (Strg+Umschalttaste+F)" [ref=e152] [cursor=pointer]
+    - generic [ref=e159]:
+      - generic "Namensfeld (Ctrl + J)" [ref=e160]:
+        - textbox [ref=e161]: A1
+        - button "Menüschaltfläche für das Namensfeld. Wählen Sie ein Menüelement aus, um zum entsprechenden benannten Bereich zu wechseln." [ref=e163] [cursor=pointer]
+      - textbox [ref=e179]
+  - navigation "Tabellenblatt-Tableiste" [ref=e215]:
+    - toolbar [ref=e216]:
+      - button "Tabellenblatt hinzufügen" [ref=e217] [cursor=pointer]
+      - button "Alle Tabellenblätter" [ref=e222] [cursor=pointer]
+    - toolbar [ref=e231]:
+      - button "01.26" [ref=e232] [cursor=pointer]:
+        - generic [ref=e236]: "01.26"
+      - button "Апрель 2026" [ref=e240] [cursor=pointer]:
+        - generic [ref=e244]: Апрель 2026
+      - button "Март 26" [ref=e248] [cursor=pointer]:
+        - generic [ref=e252]: Март 26
+      - button "февраль 26" [ref=e256] [cursor=pointer]:
+        - generic [ref=e260]: февраль 26
+      - button "январь 26" [ref=e264]:
+        - generic [ref=e268]: январь 26
+      - button "декабрь 25" [ref=e272] [cursor=pointer]:
+        - generic [ref=e276]: декабрь 25
+      - button "ноябрь 25" [ref=e280] [cursor=pointer]:
+        - generic [ref=e284]: ноябрь 25
+      - button "октябрь 25" [ref=e288] [cursor=pointer]:
+        - generic [ref=e292]: октябрь 25
+    - toolbar [ref=e296]:
+      - button "Nach links scrollen" [ref=e297] [cursor=pointer]
+      - button "Nach rechts scrollen" [ref=e302] [cursor=pointer]
+  - generic [ref=e307]:
+    - textbox [active]
+  - link "Screenreader-Unterstützung aktivieren" [ref=e308] [cursor=pointer]:
+    - /url: "#"
+  - textbox [ref=e309]
+  - region [ref=e310]: Drücken Sie zum Aktivieren des Screenreaders Strg+Alt+Z. Informationen zu Tastaturkürzeln erhalten Sie, indem Sie Strg+Schrägstrich drücken.
+  - region
+  - generic [ref=e311]: 2 Mitbearbeiter sind dem Dokument beigetreten.

@@ -1,0 +1,24 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]: Integram
+    - paragraph [ref=e7]: Войдите в систему
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]: Email
+        - textbox "Email" [active] [ref=e12]:
+          - /placeholder: user@example.com
+      - generic [ref=e13]:
+        - generic [ref=e14]: Пароль
+        - generic [ref=e15]:
+          - textbox [ref=e16]
+          - img [ref=e17]
+          - generic: Enter a password
+      - button "Войти" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: 
+        - generic [ref=e21]: Войти
+    - generic [ref=e22]:
+      - link "Забыли пароль?" [ref=e23] [cursor=pointer]:
+        - /url: /forgot-password
+      - link "Регистрация" [ref=e24] [cursor=pointer]:
+        - /url: /register

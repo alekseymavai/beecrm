@@ -1,0 +1,8 @@
+[    1141ms] [WARNING] [Vue warn]: resolveComponent can only be used in render() or setup(). @ http://localhost:5277/node_modules/.vite/deps/chunk-Z4I3UNEQ.js?v=627f4493:2203
+[    1142ms] [WARNING] [Vue warn]: resolveComponent can only be used in render() or setup(). @ http://localhost:5277/node_modules/.vite/deps/chunk-Z4I3UNEQ.js?v=627f4493:2203
+[    1142ms] [WARNING] [Vue warn]: resolveDirective can only be used in render() or setup(). @ http://localhost:5277/node_modules/.vite/deps/chunk-Z4I3UNEQ.js?v=627f4493:2203
+[  733369ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5277/src/router/index.js?t=1775688429374:0
+[  740877ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5277/src/router/index.js?t=1775688437383:0
+[  753926ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5277/src/router/index.js?t=1775688450394:0
+[  770864ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5277/src/router/index.js?t=1775688467364:0
+[  786193ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5277/login:0

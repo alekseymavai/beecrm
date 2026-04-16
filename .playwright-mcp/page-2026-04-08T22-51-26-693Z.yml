@@ -1,0 +1,56 @@
+- generic [ref=e2]:
+  - complementary [ref=e12]:
+    - generic [ref=e13]: BEECRM
+    - navigation [ref=e14]:
+      - generic [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: 
+        - text: Главная
+      - generic [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: 
+        - text: Заказы
+      - generic [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: 
+        - text: Клиенты
+      - generic [ref=e21] [cursor=pointer]:
+        - generic [ref=e22]: 
+        - text: Товары
+    - button " Выйти" [ref=e24] [cursor=pointer]:
+      - generic [ref=e25]: 
+      - text: Выйти
+  - banner [ref=e26]:
+    - generic [ref=e27]: Главная
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]: "0"
+          - generic [ref=e33]: Заказов сегодня
+        - generic [ref=e34]:
+          - generic [ref=e35]: "3"
+          - generic [ref=e36]: Клиентов
+        - generic [ref=e37]:
+          - generic [ref=e38]: "0"
+          - generic [ref=e39]: Товаров активных
+        - generic [ref=e40]:
+          - generic [ref=e41]: 0 ₽
+          - generic [ref=e42]: Общая выручка
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]: Последние заказы
+          - button "Все заказы" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: Все заказы
+        - table [ref=e50]:
+          - rowgroup [ref=e51]:
+            - row "ID Источник Статус Дата" [ref=e52]:
+              - columnheader "ID" [ref=e53]:
+                - generic [ref=e55]: ID
+              - columnheader "Источник" [ref=e56]:
+                - generic [ref=e58]: Источник
+              - columnheader "Статус" [ref=e59]:
+                - generic [ref=e61]: Статус
+              - columnheader "Дата" [ref=e62]:
+                - generic [ref=e64]: Дата
+              - columnheader [ref=e65]
+          - rowgroup [ref=e66]:
+            - row [ref=e67]:
+              - cell [ref=e68]

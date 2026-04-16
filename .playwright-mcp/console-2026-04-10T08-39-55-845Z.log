@@ -1,0 +1,13 @@
+[     242ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[     243ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[     243ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[     243ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[     243ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[     243ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/:0
+[   24128ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://ai2o.ru/beecrm/auth?JSON:0
+[   24133ms] [LOG] SyntaxError: Unexpected token 'b', "beecrm doe"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at obj.onload (https://ai2o.ru/:305:23) @ https://ai2o.ru/:307
+[   40651ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/bibot:0
+[   40652ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/bibot:0
+[   40652ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://ai2o.ru/bibot:0

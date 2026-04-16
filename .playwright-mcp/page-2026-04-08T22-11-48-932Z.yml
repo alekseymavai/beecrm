@@ -1,0 +1,75 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button
+      - link "SAKAI" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img [ref=e7]
+        - text: SAKAI
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - button
+        - generic [ref=e13]:
+          - button
+      - button
+  - list [ref=e15]:
+    - listitem [ref=e16]:
+      - generic [ref=e17]: BEECRM
+      - generic [ref=e18]: BEECRM
+      - list [ref=e19]:
+        - listitem [ref=e20]:
+          - link "Заказы" [ref=e21] [cursor=pointer]:
+            - /url: /orders
+            - text: Заказы
+        - listitem [ref=e22]:
+          - link "Клиенты" [ref=e23] [cursor=pointer]:
+            - /url: /clients
+            - text: Клиенты
+  - generic [ref=e24]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Заказы
+        - button "Импорт Excel" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: Импорт Excel
+      - generic [ref=e33]:
+        - table [ref=e35]:
+          - rowgroup [ref=e36]:
+            - row "ID Клиент ID Источник Статус Создан" [ref=e37]:
+              - columnheader "ID" [ref=e38] [cursor=pointer]:
+                - generic [ref=e39]:
+                  - generic [ref=e40]: ID
+                  - img [ref=e42]
+              - columnheader "Клиент ID" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]:
+                  - generic [ref=e49]: Клиент ID
+                  - img [ref=e51]
+              - columnheader "Источник" [ref=e56] [cursor=pointer]:
+                - generic [ref=e57]:
+                  - generic [ref=e58]: Источник
+                  - img [ref=e60]
+              - columnheader "Статус" [ref=e65] [cursor=pointer]:
+                - generic [ref=e66]:
+                  - generic [ref=e67]: Статус
+                  - img [ref=e69]
+              - columnheader "Создан" [ref=e74] [cursor=pointer]:
+                - generic [ref=e75]:
+                  - generic [ref=e76]: Создан
+                  - img [ref=e78]
+              - columnheader [ref=e83]
+          - rowgroup [ref=e84]:
+            - row [ref=e85]:
+              - cell [ref=e86]
+        - navigation [ref=e87]:
+          - generic [ref=e89]:
+            - button "First Page" [disabled]:
+              - img
+            - button "Previous Page" [disabled]:
+              - img
+            - button "Next Page" [disabled]:
+              - img
+            - button "Last Page" [disabled]:
+              - img
+    - generic [ref=e90]:
+      - text: SAKAI by
+      - link "PrimeVue" [ref=e91] [cursor=pointer]:
+        - /url: https://primevue.org

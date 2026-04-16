@@ -1,0 +1,5 @@
+[     325ms] [WARNING] <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes"> @ https://ai2o.online/:0
+[  271053ms] [ERROR] Failed to load resource: net::ERR_TIMED_OUT @ https://ai2o.online/assets/Landing-Bc1_ZKEn.js:0
+[  271130ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://ai2o.online/assets/Landing-Bc1_ZKEn.js @ https://ai2o.online/assets/index-BEvWdBg7.js:25
+[  271151ms] [ERROR] [Unhandled rejection] TypeError: Failed to fetch dynamically imported module: https://ai2o.online/assets/Landing-Bc1_ZKEn.js @ https://ai2o.online/assets/index-BEvWdBg7.js:1431
+[  271205ms] Failed to fetch dynamically imported module: https://ai2o.online/assets/Landing-Bc1_ZKEn.js

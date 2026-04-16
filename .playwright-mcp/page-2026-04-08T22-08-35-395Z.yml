@@ -1,0 +1,239 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button
+      - link "SAKAI" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img [ref=e7]
+        - text: SAKAI
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - button
+        - generic [ref=e13]:
+          - button
+      - button
+  - list [ref=e15]:
+    - listitem [ref=e16]:
+      - generic [ref=e17]: BEECRM
+      - generic [ref=e18]: BEECRM
+      - list [ref=e19]:
+        - listitem [ref=e20]:
+          - link "Заказы" [ref=e21] [cursor=pointer]:
+            - /url: /orders
+            - text: Заказы
+        - listitem [ref=e22]:
+          - link "Клиенты" [ref=e23] [cursor=pointer]:
+            - /url: /clients
+            - text: Клиенты
+  - generic [ref=e24]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Заказы
+        - button "Импорт Excel" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: Импорт Excel
+      - generic [ref=e33]:
+        - table [ref=e35]:
+          - rowgroup [ref=e36]:
+            - row "ID Клиент ID Источник Статус Создан" [ref=e37]:
+              - columnheader "ID" [ref=e38] [cursor=pointer]:
+                - generic [ref=e39]:
+                  - generic [ref=e40]: ID
+                  - img [ref=e42]
+              - columnheader "Клиент ID" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]:
+                  - generic [ref=e49]: Клиент ID
+                  - img [ref=e51]
+              - columnheader "Источник" [ref=e56] [cursor=pointer]:
+                - generic [ref=e57]:
+                  - generic [ref=e58]: Источник
+                  - img [ref=e60]
+              - columnheader "Статус" [ref=e65] [cursor=pointer]:
+                - generic [ref=e66]:
+                  - generic [ref=e67]: Статус
+                  - img [ref=e69]
+              - columnheader "Создан" [ref=e74] [cursor=pointer]:
+                - generic [ref=e75]:
+                  - generic [ref=e76]: Создан
+                  - img [ref=e78]
+              - columnheader [ref=e83]
+          - rowgroup [ref=e84]:
+            - row "—" [ref=e85]:
+              - cell [ref=e86]
+              - cell [ref=e87]
+              - cell [ref=e88]
+              - cell [ref=e89]
+              - cell "—" [ref=e91]
+              - cell [ref=e92]:
+                - button [ref=e93] [cursor=pointer]
+            - row "—" [ref=e94]:
+              - cell [ref=e95]
+              - cell [ref=e96]
+              - cell [ref=e97]
+              - cell [ref=e98]
+              - cell "—" [ref=e100]
+              - cell [ref=e101]:
+                - button [ref=e102] [cursor=pointer]
+            - row "—" [ref=e103]:
+              - cell [ref=e104]
+              - cell [ref=e105]
+              - cell [ref=e106]
+              - cell [ref=e107]
+              - cell "—" [ref=e109]
+              - cell [ref=e110]:
+                - button [ref=e111] [cursor=pointer]
+            - row "—" [ref=e112]:
+              - cell [ref=e113]
+              - cell [ref=e114]
+              - cell [ref=e115]
+              - cell [ref=e116]
+              - cell "—" [ref=e118]
+              - cell [ref=e119]:
+                - button [ref=e120] [cursor=pointer]
+            - row "—" [ref=e121]:
+              - cell [ref=e122]
+              - cell [ref=e123]
+              - cell [ref=e124]
+              - cell [ref=e125]
+              - cell "—" [ref=e127]
+              - cell [ref=e128]:
+                - button [ref=e129] [cursor=pointer]
+            - row "—" [ref=e130]:
+              - cell [ref=e131]
+              - cell [ref=e132]
+              - cell [ref=e133]
+              - cell [ref=e134]
+              - cell "—" [ref=e136]
+              - cell [ref=e137]:
+                - button [ref=e138] [cursor=pointer]
+            - row "—" [ref=e139]:
+              - cell [ref=e140]
+              - cell [ref=e141]
+              - cell [ref=e142]
+              - cell [ref=e143]
+              - cell "—" [ref=e145]
+              - cell [ref=e146]:
+                - button [ref=e147] [cursor=pointer]
+            - row "—" [ref=e148]:
+              - cell [ref=e149]
+              - cell [ref=e150]
+              - cell [ref=e151]
+              - cell [ref=e152]
+              - cell "—" [ref=e154]
+              - cell [ref=e155]:
+                - button [ref=e156] [cursor=pointer]
+            - row "—" [ref=e157]:
+              - cell [ref=e158]
+              - cell [ref=e159]
+              - cell [ref=e160]
+              - cell [ref=e161]
+              - cell "—" [ref=e163]
+              - cell [ref=e164]:
+                - button [ref=e165] [cursor=pointer]
+            - row "—" [ref=e166]:
+              - cell [ref=e167]
+              - cell [ref=e168]
+              - cell [ref=e169]
+              - cell [ref=e170]
+              - cell "—" [ref=e172]
+              - cell [ref=e173]:
+                - button [ref=e174] [cursor=pointer]
+            - row "—" [ref=e175]:
+              - cell [ref=e176]
+              - cell [ref=e177]
+              - cell [ref=e178]
+              - cell [ref=e179]
+              - cell "—" [ref=e181]
+              - cell [ref=e182]:
+                - button [ref=e183] [cursor=pointer]
+            - row "—" [ref=e184]:
+              - cell [ref=e185]
+              - cell [ref=e186]
+              - cell [ref=e187]
+              - cell [ref=e188]
+              - cell "—" [ref=e190]
+              - cell [ref=e191]:
+                - button [ref=e192] [cursor=pointer]
+            - row "—" [ref=e193]:
+              - cell [ref=e194]
+              - cell [ref=e195]
+              - cell [ref=e196]
+              - cell [ref=e197]
+              - cell "—" [ref=e199]
+              - cell [ref=e200]:
+                - button [ref=e201] [cursor=pointer]
+            - row "—" [ref=e202]:
+              - cell [ref=e203]
+              - cell [ref=e204]
+              - cell [ref=e205]
+              - cell [ref=e206]
+              - cell "—" [ref=e208]
+              - cell [ref=e209]:
+                - button [ref=e210] [cursor=pointer]
+            - row "—" [ref=e211]:
+              - cell [ref=e212]
+              - cell [ref=e213]
+              - cell [ref=e214]
+              - cell [ref=e215]
+              - cell "—" [ref=e217]
+              - cell [ref=e218]:
+                - button [ref=e219] [cursor=pointer]
+            - row "—" [ref=e220]:
+              - cell [ref=e221]
+              - cell [ref=e222]
+              - cell [ref=e223]
+              - cell [ref=e224]
+              - cell "—" [ref=e226]
+              - cell [ref=e227]:
+                - button [ref=e228] [cursor=pointer]
+            - row "—" [ref=e229]:
+              - cell [ref=e230]
+              - cell [ref=e231]
+              - cell [ref=e232]
+              - cell [ref=e233]
+              - cell "—" [ref=e235]
+              - cell [ref=e236]:
+                - button [ref=e237] [cursor=pointer]
+            - row "—" [ref=e238]:
+              - cell [ref=e239]
+              - cell [ref=e240]
+              - cell [ref=e241]
+              - cell [ref=e242]
+              - cell "—" [ref=e244]
+              - cell [ref=e245]:
+                - button [ref=e246] [cursor=pointer]
+            - row "—" [ref=e247]:
+              - cell [ref=e248]
+              - cell [ref=e249]
+              - cell [ref=e250]
+              - cell [ref=e251]
+              - cell "—" [ref=e253]
+              - cell [ref=e254]:
+                - button [ref=e255] [cursor=pointer]
+            - row "—" [ref=e256]:
+              - cell [ref=e257]
+              - cell [ref=e258]
+              - cell [ref=e259]
+              - cell [ref=e260]
+              - cell "—" [ref=e262]
+              - cell [ref=e263]:
+                - button [ref=e264] [cursor=pointer]
+        - navigation [ref=e265]:
+          - generic [ref=e267]:
+            - button "First Page" [disabled]:
+              - img
+            - button "Previous Page" [disabled]:
+              - img
+            - generic [ref=e268]:
+              - button "Page 1" [ref=e269] [cursor=pointer]: "1"
+              - button "Page 2" [ref=e270] [cursor=pointer]: "2"
+              - button "Page 3" [ref=e271] [cursor=pointer]: "3"
+              - button "Page 4" [ref=e272] [cursor=pointer]: "4"
+              - button "Page 5" [ref=e273] [cursor=pointer]: "5"
+            - button "Next Page" [ref=e274] [cursor=pointer]:
+              - img [ref=e275]
+            - button "Last Page" [ref=e277] [cursor=pointer]:
+              - img [ref=e278]
+    - generic [ref=e280]:
+      - text: SAKAI by
+      - link "PrimeVue" [ref=e281] [cursor=pointer]:
+        - /url: https://primevue.org

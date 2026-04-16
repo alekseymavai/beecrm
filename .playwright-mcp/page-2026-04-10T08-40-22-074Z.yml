@@ -1,0 +1,28 @@
+- generic [ref=e7]:
+  - link "Telegram help chat" [ref=e9] [cursor=pointer]:
+    - /url: https://t.me/+U13Y8rQ4BXFjYjcy
+    - img [ref=e10]
+  - img [ref=e15] [cursor=pointer]
+  - generic [ref=e16]:
+    - heading "Integram Sign in" [level=5] [ref=e17]
+    - link "Go to Integram site" [ref=e19] [cursor=pointer]:
+      - /url: https://integram.io/?main
+    - generic [ref=e20]:
+      - textbox "Database" [ref=e21]:
+        - /placeholder: <t9n>Database</t9n>
+        - text: beecrm
+      - generic: Database
+    - generic [ref=e22]:
+      - textbox "User" [ref=e23]:
+        - /placeholder: name@example.com
+        - text: alekseymavai@gmail.com
+      - generic: User
+    - generic [ref=e24]:
+      - textbox "Password" [ref=e25]:
+        - /placeholder: <t9n>Password</t9n>
+        - text: alekseymavai
+      - generic: Password
+    - alert [ref=e32]: Wrong credentials
+    - button "Sign in" [active] [ref=e27] [cursor=pointer]
+    - generic [ref=e29] [cursor=pointer]: Reset password
+    - generic [ref=e31] [cursor=pointer]: Create an account
