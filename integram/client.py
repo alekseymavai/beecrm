@@ -14,58 +14,58 @@ logger = logging.getLogger(__name__)
 class IntegramClient:
     IAM  = "https://ai2o.online/api/v2/iam"
 
-    T_CLIENTS  = 16
-    T_ORDERS   = 17
-    T_EVENTS   = 37   # child-таблица "История заказов" (parentTypeId=17)
+    T_CLIENTS  = 19
+    T_ORDERS   = 20
+    T_EVENTS   = 22   # child-таблица «История изменений заказа» (parentTypeId=20)
     T_STATUSES = 14
     T_SOURCES  = 15
-    T_PRODUCTS = 52
+    T_PRODUCTS = 18
 
-    # ── Users (таблица «Пользователи CRM», typeId 138) ─────────────────────
-    T_USERS         = 138
-    COL_USER_LOGIN  = 139  # login (text)
-    COL_USER_HASH   = 140  # password_hash (text)
-    COL_USER_ROLE   = 141  # role (text)
-    COL_USER_ACTIVE = 142  # is_active (bool)
+    # ── Users (таблица «Пользователи CRM», typeId 1578) ────────────────────
+    T_USERS         = 1578
+    COL_USER_LOGIN  = 1579  # login (text)
+    COL_USER_HASH   = 1580  # password_hash (text)
+    COL_USER_ROLE   = 1581  # role (text)
+    COL_USER_ACTIVE = 1582  # is_active (bool)
 
-    COL_PRODUCT_PRICE       = 53
-    COL_PRODUCT_CATEGORY    = 54
-    COL_PRODUCT_STOCK       = 55
-    COL_PRODUCT_ACTIVE      = 56
-    COL_PRODUCT_DESCRIPTION = 57
+    COL_PRODUCT_PRICE       = 24
+    COL_PRODUCT_CATEGORY    = 56
+    COL_PRODUCT_STOCK       = 30
+    COL_PRODUCT_ACTIVE      = 27
+    COL_PRODUCT_DESCRIPTION = 26
 
     STATUS_MAP = {
-        "NEW":         18,
-        "CONFIRMED":   190,
-        "IN_PROGRESS": 19,
-        "DONE":        20,
-        "CANCELLED":   21,
+        "NEW":         61,
+        "CONFIRMED":   62,
+        "IN_PROGRESS": 63,
+        "DONE":        67,
+        "CANCELLED":   66,
     }
     SOURCE_MAP = {
-        "UDS":       22,
-        "MESSENGER": 23,
-        "TABLE":     25,
+        "UDS":       72,
+        "MESSENGER": 70,
+        "TABLE":     68,
     }
 
-    # Col IDs — Клиенты (typeId 16)
-    COL_CLIENT_NOTES = 27
-    COL_CLIENT_PHONE = 28
-    COL_CLIENT_EMAIL = 29
+    # Col IDs — Клиенты (typeId 19)
+    COL_CLIENT_NOTES = 37
+    COL_CLIENT_PHONE = 32
+    COL_CLIENT_EMAIL = 1588
 
-    # Col IDs — Заказы (typeId 17)
-    COL_ORDER_CLIENT     = 30   # ref → Клиенты
-    COL_ORDER_STATUS     = 31   # ref → Статусы
-    COL_ORDER_SOURCE     = 32   # ref → Источники
-    COL_ORDER_AMOUNT     = 33
-    COL_ORDER_NOTES      = 34   # memo — JSON payload
-    COL_ORDER_CREATED_AT = 35
+    # Col IDs — Заказы (typeId 20)
+    COL_ORDER_CLIENT     = 57   # ref → Клиенты
+    COL_ORDER_STATUS     = 58   # ref → Статусы
+    COL_ORDER_SOURCE     = 1589  # ref → Источники
+    COL_ORDER_AMOUNT     = 42
+    COL_ORDER_NOTES      = 45   # memo — JSON payload
+    COL_ORDER_CREATED_AT = 39
 
-    # Col IDs — История заказов (typeId 37)
-    COL_EVENT_FROM   = 38
-    COL_EVENT_TO     = 39
-    COL_EVENT_ACTOR  = 40
-    COL_EVENT_META   = 41
-    COL_EVENT_TIME   = 42
+    # Col IDs — История изменений заказа (typeId 22)
+    COL_EVENT_FROM   = 1591  # Предыдущий статус (string)
+    COL_EVENT_TO     = 54    # Статус заказа на момент изменения
+    COL_EVENT_ACTOR  = 55    # Кто изменил
+    COL_EVENT_META   = 53    # Описание изменения
+    COL_EVENT_TIME   = 52    # Дата изменения
 
     def __init__(self, login: str, password: str, token: str | None = None, workspace: str = "beecrm") -> None:
         self._login    = login
