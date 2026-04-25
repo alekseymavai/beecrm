@@ -28,24 +28,26 @@ class TestFSM:
         o2 = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
         assert o2["status"] == "IN_PROGRESS"
 
-    async def test_in_progress_to_done(self, igm, order):
+    async def test_in_progress_to_shipped(self, igm, order):
         o = igm_to_order(await transition_status(igm, order, OrderStatus.CONFIRMED))
         o = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
-        o = igm_to_order(await transition_status(igm, o, OrderStatus.DONE))
-        assert o["status"] == "DONE"
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.SHIPPED))
+        assert o["status"] == "SHIPPED"
 
     async def test_cancel_from_new(self, igm, order):
         o = igm_to_order(await transition_status(igm, order, OrderStatus.CANCELLED))
         assert o["status"] == "CANCELLED"
 
-    async def test_forbidden_new_to_done(self, igm, order):
+    async def test_forbidden_new_to_shipped(self, igm, order):
         with pytest.raises(FSMError):
-            await transition_status(igm, order, OrderStatus.DONE)
+            await transition_status(igm, order, OrderStatus.SHIPPED)
 
-    async def test_forbidden_done_to_any(self, igm, order):
+    async def test_forbidden_completed_to_any(self, igm, order):
         o = igm_to_order(await transition_status(igm, order, OrderStatus.CONFIRMED))
         o = igm_to_order(await transition_status(igm, o, OrderStatus.IN_PROGRESS))
-        o = igm_to_order(await transition_status(igm, o, OrderStatus.DONE))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.SHIPPED))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.DELIVERED))
+        o = igm_to_order(await transition_status(igm, o, OrderStatus.COMPLETED))
         with pytest.raises(FSMError):
             await transition_status(igm, o, OrderStatus.CANCELLED)
 

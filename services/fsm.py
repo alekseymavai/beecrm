@@ -1,10 +1,12 @@
 """FSM переходы заказа.
 
 Допустимые переходы:
-  NEW → CONFIRMED | CANCELLED
-  CONFIRMED → IN_PROGRESS | CANCELLED
-  IN_PROGRESS → DONE | CANCELLED
-  DONE / CANCELLED — финальные, переходов нет
+  NEW        → CONFIRMED | CANCELLED
+  CONFIRMED  → IN_PROGRESS | CANCELLED
+  IN_PROGRESS → SHIPPED | CANCELLED
+  SHIPPED    → DELIVERED | CANCELLED
+  DELIVERED  → COMPLETED
+  COMPLETED / CANCELLED — финальные, переходов нет
 """
 
 import json
@@ -16,11 +18,13 @@ from schemas.enums import OrderStatus
 logger = logging.getLogger(__name__)
 
 ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
-    OrderStatus.NEW: {OrderStatus.CONFIRMED, OrderStatus.CANCELLED},
-    OrderStatus.CONFIRMED: {OrderStatus.IN_PROGRESS, OrderStatus.CANCELLED},
-    OrderStatus.IN_PROGRESS: {OrderStatus.DONE, OrderStatus.CANCELLED},
-    OrderStatus.DONE: set(),
-    OrderStatus.CANCELLED: set(),
+    OrderStatus.NEW:         {OrderStatus.CONFIRMED,   OrderStatus.CANCELLED},
+    OrderStatus.CONFIRMED:   {OrderStatus.IN_PROGRESS, OrderStatus.CANCELLED},
+    OrderStatus.IN_PROGRESS: {OrderStatus.SHIPPED,     OrderStatus.CANCELLED},
+    OrderStatus.SHIPPED:     {OrderStatus.DELIVERED,   OrderStatus.CANCELLED},
+    OrderStatus.DELIVERED:   {OrderStatus.COMPLETED},
+    OrderStatus.COMPLETED:   set(),
+    OrderStatus.CANCELLED:   set(),
 }
 
 

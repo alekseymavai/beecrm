@@ -7,7 +7,7 @@ UDS_STATUS_MAP: dict[str, OrderStatus] = {
     "NEED_ACK": OrderStatus.NEW,
     "WAITING_PAYMENT": OrderStatus.NEW,
     "ACCEPTED": OrderStatus.CONFIRMED,
-    "COMPLETED": OrderStatus.DONE,
+    "COMPLETED": OrderStatus.COMPLETED,
     "CANCELLED": OrderStatus.CANCELLED,
 }
 

@@ -484,7 +484,7 @@ class TestNormalizeAliasRow:
             "id": 11452,
             "name": "Заказ 527609",
             "Номер": "527609",
-            "Статус заказа": f"Отправлен (id:{self.C.STATUS_MAP['DONE']})",
+            "Статус заказа": f"Отправлен (id:{self.C.STATUS_MAP['SHIPPED']})",
             "Источник": f"ВК (id:{self.C.SOURCE_MAP['TABLE']})",
             "Клиент": "Иванов (id:42)",
             "Дата": "1760140800",
@@ -501,7 +501,7 @@ class TestNormalizeAliasRow:
     def test_order_status_extracted(self):
         row = self._order_alias_row()
         result = _normalize_alias_row(self.C.T_ORDERS, row)
-        assert result["requisites"][str(self.C.COL_ORDER_STATUS)] == str(self.C.STATUS_MAP["DONE"])
+        assert result["requisites"][str(self.C.COL_ORDER_STATUS)] == str(self.C.STATUS_MAP["SHIPPED"])
 
     def test_order_source_extracted(self):
         row = self._order_alias_row()
@@ -581,7 +581,7 @@ class TestAliasFormatEndToEnd:
     C = IntegramClient
 
     def test_igm_to_order_alias_status_and_client(self):
-        status_id = self.C.STATUS_MAP["DONE"]
+        status_id = self.C.STATUS_MAP["SHIPPED"]
         row = {
             "id": 11452,
             "name": "Заказ 527609",
@@ -591,7 +591,7 @@ class TestAliasFormatEndToEnd:
         }
         normalized = _normalize_alias_row(self.C.T_ORDERS, row)
         result = igm_to_order(normalized)
-        assert result["status"] == "DONE"
+        assert result["status"] == "SHIPPED"
         assert result["client_id"] == 42
         assert "T" in result["created_at"]
 

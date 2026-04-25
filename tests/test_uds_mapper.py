@@ -78,7 +78,7 @@ class TestStatusMap:
         assert UDS_STATUS_MAP["ACCEPTED"] == OrderStatus.CONFIRMED
 
     def test_status_map_completed(self):
-        assert UDS_STATUS_MAP["COMPLETED"] == OrderStatus.DONE
+        assert UDS_STATUS_MAP["COMPLETED"] == OrderStatus.COMPLETED
 
     def test_status_map_cancelled(self):
         assert UDS_STATUS_MAP["CANCELLED"] == OrderStatus.CANCELLED

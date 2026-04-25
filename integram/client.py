@@ -39,11 +39,13 @@ class IntegramClient:
     COL_PRODUCT_DESCRIPTION = 50
 
     STATUS_MAP = {
-        "NEW":         130,
-        "CONFIRMED":   131,
-        "IN_PROGRESS": 132,
-        "DONE":        134,   # usadba: «Доставлен»
-        "CANCELLED":   135,
+        "NEW":         130,   # Новый
+        "CONFIRMED":   131,   # Подтверждён
+        "IN_PROGRESS": 132,   # В сборке
+        "SHIPPED":     133,   # Отправлен
+        "DELIVERED":   134,   # Доставлен
+        "COMPLETED":   28896, # Завершён
+        "CANCELLED":   135,   # Отменён
     }
     SOURCE_MAP = {
         "UDS":       122,
