@@ -19,7 +19,7 @@ import sys
 async def main() -> None:
     login = os.environ.get("INTEGRAM_LOGIN")
     password = os.environ.get("INTEGRAM_PASSWORD")
-    workspace = os.environ.get("INTEGRAM_WORKSPACE", "beecrm")
+    workspace = os.environ.get("INTEGRAM_WORKSPACE", "usadba")
 
     if not login or not password:
         print("ERROR: INTEGRAM_LOGIN и INTEGRAM_PASSWORD должны быть заданы в .env")

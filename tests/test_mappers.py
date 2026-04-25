@@ -17,14 +17,14 @@ EMAIL_KEY = str(C.COL_CLIENT_EMAIL)   # "29"
 
 ORDER_CLIENT_KEY     = str(C.COL_ORDER_CLIENT)      # "30"
 ORDER_STATUS_KEY     = str(C.COL_ORDER_STATUS)      # "31"
-ORDER_NOTES_KEY      = str(C.COL_ORDER_NOTES)       # "34"
+ORDER_NOTES_KEY      = str(C.COL_ORDER_NOTES) if C.COL_ORDER_NOTES is not None else None
 ORDER_CREATED_AT_KEY = str(C.COL_ORDER_CREATED_AT)  # "35"
 
-PRODUCT_PRICE_KEY       = str(C.COL_PRODUCT_PRICE)       # "53"
-PRODUCT_CATEGORY_KEY    = str(C.COL_PRODUCT_CATEGORY)    # "54"
-PRODUCT_STOCK_KEY       = str(C.COL_PRODUCT_STOCK)       # "55"
-PRODUCT_ACTIVE_KEY      = str(C.COL_PRODUCT_ACTIVE)      # "56"
-PRODUCT_DESCRIPTION_KEY = str(C.COL_PRODUCT_DESCRIPTION) # "57"
+PRODUCT_PRICE_KEY       = str(C.COL_PRODUCT_PRICE)
+PRODUCT_CATEGORY_KEY    = str(C.COL_PRODUCT_CATEGORY)
+PRODUCT_STOCK_KEY       = str(C.COL_PRODUCT_STOCK) if C.COL_PRODUCT_STOCK is not None else None
+PRODUCT_ACTIVE_KEY      = str(C.COL_PRODUCT_ACTIVE)
+PRODUCT_DESCRIPTION_KEY = str(C.COL_PRODUCT_DESCRIPTION)
 
 EVENT_FROM_KEY  = str(C.COL_EVENT_FROM)   # "38"
 EVENT_TO_KEY    = str(C.COL_EVENT_TO)     # "39"
@@ -120,16 +120,18 @@ class TestIgmToOrder:
 
     def _row(self, **overrides):
         status_id = C.STATUS_MAP["IN_PROGRESS"]
+        reqs = {
+            ORDER_CLIENT_KEY:     "77",
+            ORDER_STATUS_KEY:     str(status_id),
+            ORDER_CREATED_AT_KEY: "2024-03-01T08:00:00+00:00",
+        }
+        if ORDER_NOTES_KEY is not None:
+            reqs[ORDER_NOTES_KEY] = self._notes()
         row = {
             "id": 100,
             "createdAt": "2024-03-01T08:00:00+00:00",
             "updatedAt": "2024-03-02T08:00:00+00:00",
-            "requisites": {
-                ORDER_CLIENT_KEY:     "77",
-                ORDER_STATUS_KEY:     str(status_id),
-                ORDER_NOTES_KEY:      self._notes(),
-                ORDER_CREATED_AT_KEY: "2024-03-01T08:00:00+00:00",
-            },
+            "requisites": reqs,
         }
         row.update(overrides)
         return row
@@ -140,7 +142,10 @@ class TestIgmToOrder:
         assert result["client_id"] == 77
         assert result["status"] == "IN_PROGRESS"
         assert result["source"] == "MESSENGER"
-        assert result["payload"] == {"qty": 2}
+        if ORDER_NOTES_KEY is not None:
+            assert result["payload"] == {"qty": 2}
+        else:
+            assert result["payload"] == {}
         assert result["created_at"] == "2024-03-01T08:00:00+00:00"
 
     def test_status_new_when_empty(self):
@@ -162,6 +167,7 @@ class TestIgmToOrder:
             result = igm_to_order(row)
             assert result["status"] == status_str
 
+    @pytest.mark.skipif(ORDER_NOTES_KEY is None, reason="usadba has no notes column")
     def test_invalid_notes_json(self):
         row = self._row()
         row["requisites"][ORDER_NOTES_KEY] = "{not valid json!!!"
@@ -170,6 +176,7 @@ class TestIgmToOrder:
         assert result["source"] == "MESSENGER"
         assert result["payload"] == {}
 
+    @pytest.mark.skipif(ORDER_NOTES_KEY is None, reason="usadba has no notes column")
     def test_none_notes(self):
         row = self._row()
         row["requisites"][ORDER_NOTES_KEY] = None
@@ -217,18 +224,20 @@ class TestIgmToOrder:
 
 class TestIgmToProduct:
     def _row(self, **overrides):
+        reqs = {
+            PRODUCT_PRICE_KEY:       "350.50",
+            PRODUCT_CATEGORY_KEY:    "Мёд",
+            PRODUCT_ACTIVE_KEY:      "1",
+            PRODUCT_DESCRIPTION_KEY: "Тёмный мёд с гречки",
+        }
+        if PRODUCT_STOCK_KEY is not None:
+            reqs[PRODUCT_STOCK_KEY] = "10"
         row = {
             "id": 200,
             "value": "Мёд гречишный",
             "createdAt": "2024-04-01T00:00:00+00:00",
             "updatedAt": "2024-04-02T00:00:00+00:00",
-            "requisites": {
-                PRODUCT_PRICE_KEY:       "350.50",
-                PRODUCT_CATEGORY_KEY:    "Мёд",
-                PRODUCT_STOCK_KEY:       "10",
-                PRODUCT_ACTIVE_KEY:      "1",
-                PRODUCT_DESCRIPTION_KEY: "Тёмный мёд с гречки",
-            },
+            "requisites": reqs,
         }
         row.update(overrides)
         return row
@@ -239,7 +248,10 @@ class TestIgmToProduct:
         assert result["name"] == "Мёд гречишный"
         assert result["price"] == pytest.approx(350.50)
         assert result["category"] == "Мёд"
-        assert result["stock"] == 10
+        if PRODUCT_STOCK_KEY is not None:
+            assert result["stock"] == 10
+        else:
+            assert result["stock"] == 0
         assert result["active"] is True
         assert result["description"] == "Тёмный мёд с гречки"
 
@@ -255,12 +267,14 @@ class TestIgmToProduct:
         result = igm_to_product(row)
         assert result["price"] == 0.0
 
+    @pytest.mark.skipif(PRODUCT_STOCK_KEY is None, reason="usadba has no stock column")
     def test_none_stock_defaults_to_zero(self):
         row = self._row()
         row["requisites"][PRODUCT_STOCK_KEY] = None
         result = igm_to_product(row)
         assert result["stock"] == 0
 
+    @pytest.mark.skipif(PRODUCT_STOCK_KEY is None, reason="usadba has no stock column")
     def test_float_stock_truncated(self):
         row = self._row()
         row["requisites"][PRODUCT_STOCK_KEY] = "7.9"

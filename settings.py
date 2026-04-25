@@ -11,8 +11,8 @@ REQUIRED_VARS = ("API_KEY", "INTEGRAM_LOGIN", "INTEGRAM_PASSWORD", "JWT_SECRET")
 API_KEY: str = ""
 INTEGRAM_LOGIN: str = ""
 INTEGRAM_PASSWORD: str = ""
-INTEGRAM_WORKSPACE: str = "beecrm"
-INTEGRAM_T_EVENTS: int = 37   # ID child-таблицы OrderEvent (typeId 37); 0 = отключено
+INTEGRAM_WORKSPACE: str = "usadba"
+INTEGRAM_T_EVENTS: int = 28890  # ID child-таблицы OrderEvent (usadba); 0 = отключено
 CORS_ORIGINS: list[str] = []
 JWT_SECRET: str = ""
 JWT_EXPIRE_MINUTES: int = 1440  # 24 часа
@@ -28,7 +28,7 @@ def startup_check() -> None:
     API_KEY = os.environ["API_KEY"]
     INTEGRAM_LOGIN = os.environ["INTEGRAM_LOGIN"]
     INTEGRAM_PASSWORD = os.environ["INTEGRAM_PASSWORD"]
-    INTEGRAM_WORKSPACE = os.environ.get("INTEGRAM_WORKSPACE", "beecrm")
+    INTEGRAM_WORKSPACE = os.environ.get("INTEGRAM_WORKSPACE", "usadba")
     INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "37"))
     cors_raw = os.environ.get("CORS_ORIGINS", "")
     CORS_ORIGINS = [o.strip() for o in cors_raw.split(",") if o.strip()]

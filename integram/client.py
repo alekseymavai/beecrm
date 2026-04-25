@@ -14,60 +14,61 @@ logger = logging.getLogger(__name__)
 class IntegramClient:
     IAM  = "https://ai2o.online/api/v2/iam"
 
-    T_CLIENTS  = 19
-    T_ORDERS   = 20
-    T_EVENTS   = 22   # child-таблица «История изменений заказа» (parentTypeId=20)
-    T_STATUSES = 14
-    T_SOURCES  = 15
-    T_PRODUCTS = 18
+    # ── workspace: usadba ──────────────────────────────────────────────────
+    T_CLIENTS  = 21
+    T_ORDERS   = 24
+    T_EVENTS   = 28890  # child-таблица «История изменений заказа» (parentTypeId=24)
+    T_STATUSES = 15
+    T_SOURCES  = 14
+    T_PRODUCTS = 23
 
-    # ── Users (таблица «Пользователи CRM», typeId 1578) ────────────────────
-    T_USERS         = 1578
-    COL_USER_LOGIN  = 1579  # login (text)
-    COL_USER_HASH   = 1580  # password_hash (text)
-    COL_USER_ROLE   = 1581  # role (text)
-    COL_USER_ACTIVE = 1582  # is_active (bool)
+    # ── Users (таблица «Пользователи CRM», typeId 28885) ───────────────────
+    T_USERS         = 28885
+    COL_USER_LOGIN  = 28886  # login (text)
+    COL_USER_HASH   = 28887  # password_hash (text)
+    COL_USER_ROLE   = 28888  # role (text)
+    COL_USER_ACTIVE = 28889  # is_active (bool)
 
-    COL_PRODUCT_PRICE       = 24
-    COL_PRODUCT_CATEGORY    = 56
-    COL_PRODUCT_STOCK       = 30
-    COL_PRODUCT_ACTIVE      = 27
-    COL_PRODUCT_DESCRIPTION = 26
+    COL_PRODUCT_PRICE       = 47
+    COL_PRODUCT_CATEGORY    = 81
+    COL_PRODUCT_STOCK       = None  # usadba не ведёт остатки
+    COL_PRODUCT_ACTIVE      = 54
+    COL_PRODUCT_DESCRIPTION = 50
 
     STATUS_MAP = {
-        "NEW":         61,
-        "CONFIRMED":   62,
-        "IN_PROGRESS": 63,
-        "DONE":        67,
-        "CANCELLED":   66,
+        "NEW":         130,
+        "CONFIRMED":   131,
+        "IN_PROGRESS": 132,
+        "DONE":        134,   # usadba: «Доставлен»
+        "CANCELLED":   135,
     }
     SOURCE_MAP = {
-        "UDS":       72,
-        "MESSENGER": 70,
-        "TABLE":     68,
+        "UDS":       122,
+        "MESSENGER": 125,   # Telegram
+        "TABLE":     123,   # ВК
     }
 
-    # Col IDs — Клиенты (typeId 19)
-    COL_CLIENT_NOTES = 37
-    COL_CLIENT_PHONE = 32
-    COL_CLIENT_EMAIL = 1588
+    # Col IDs — Клиенты (typeId 21)
+    COL_CLIENT_NOTES = 39   # Примечание
+    COL_CLIENT_PHONE = 29
+    COL_CLIENT_EMAIL = 30
 
-    # Col IDs — Заказы (typeId 20)
-    COL_ORDER_CLIENT     = 57   # ref → Клиенты
-    COL_ORDER_STATUS     = 58   # ref → Статусы
-    COL_ORDER_SOURCE     = 1589  # ref → Источники
-    COL_ORDER_AMOUNT     = 42
-    COL_ORDER_NOTES      = 45   # memo — JSON payload
-    COL_ORDER_CREATED_AT = 39
+    # Col IDs — Заказы (typeId 24)
+    COL_ORDER_CLIENT     = 83   # ref → Клиенты
+    COL_ORDER_STATUS     = 87   # ref → Статусы заказа (скрыт в schema, работает)
+    COL_ORDER_SOURCE     = 82   # ref → Источники
+    COL_ORDER_AMOUNT     = 60   # Сумма (валюта)
+    COL_ORDER_NOTES      = None # usadba: комментарии в child-таблице 27
+    COL_ORDER_CREATED_AT = 56   # Дата
 
-    # Col IDs — История изменений заказа (typeId 22)
-    COL_EVENT_FROM   = 1591  # Предыдущий статус (string)
-    COL_EVENT_TO     = 54    # Статус заказа на момент изменения
-    COL_EVENT_ACTOR  = 55    # Кто изменил
-    COL_EVENT_META   = 53    # Описание изменения
-    COL_EVENT_TIME   = 52    # Дата изменения
+    # Col IDs — История изменений заказа (typeId 28890)
+    COL_EVENT_FROM   = 28891  # Предыдущий статус
+    COL_EVENT_TO     = 28892  # Новый статус
+    COL_EVENT_ACTOR  = 28893  # Кто изменил
+    COL_EVENT_META   = 28894  # Описание
+    COL_EVENT_TIME   = 28895  # Дата изменения
 
-    def __init__(self, login: str, password: str, token: str | None = None, workspace: str = "beecrm") -> None:
+    def __init__(self, login: str, password: str, token: str | None = None, workspace: str = "usadba") -> None:
         self._login    = login
         self._password = password
         self._token    = token
@@ -75,7 +76,7 @@ class IntegramClient:
         self.BASE      = f"https://ai2o.online/api/v2/{workspace}"
 
     @classmethod
-    async def authenticate(cls, login: str, password: str, workspace: str = "beecrm") -> "IntegramClient":
+    async def authenticate(cls, login: str, password: str, workspace: str = "usadba") -> "IntegramClient":
         instance = cls(login, password, workspace=workspace)
         await instance._refresh_token()
         return instance
@@ -231,16 +232,18 @@ class IntegramClient:
         payload: dict,
         actor: str = "system",
     ) -> dict:
-        notes = json.dumps({"source": source, "payload": payload}, ensure_ascii=False)
+        reqs: dict[str, Any] = {
+            str(self.COL_ORDER_CLIENT): client_id,
+            str(self.COL_ORDER_STATUS): status_id,
+            str(self.COL_ORDER_SOURCE): self.SOURCE_MAP.get(source, 0),
+        }
+        if self.COL_ORDER_NOTES is not None:
+            notes = json.dumps({"source": source, "payload": payload}, ensure_ascii=False)
+            reqs[str(self.COL_ORDER_NOTES)] = notes
         order = await self.create_object(
             self.T_ORDERS,
             value="",
-            requisites={
-                str(self.COL_ORDER_CLIENT): client_id,
-                str(self.COL_ORDER_STATUS): status_id,
-                str(self.COL_ORDER_SOURCE): self.SOURCE_MAP.get(source, 0),
-                str(self.COL_ORDER_NOTES):  notes,
-            },
+            requisites=reqs,
         )
         order_id = order["id"]
 

@@ -36,7 +36,10 @@ def igm_to_client(row: dict) -> dict:
 def igm_to_order(row: dict) -> dict:
     req = row.get("requisites") or {}
 
-    notes_str = req.get(str(IntegramClient.COL_ORDER_NOTES)) or "{}"
+    if IntegramClient.COL_ORDER_NOTES is not None:
+        notes_str = req.get(str(IntegramClient.COL_ORDER_NOTES)) or "{}"
+    else:
+        notes_str = "{}"
     try:
         notes = json.loads(notes_str)
     except (json.JSONDecodeError, TypeError):
@@ -70,7 +73,7 @@ def igm_to_product(row: dict) -> dict:
     req = row.get("requisites") or {}
     created_at = row.get("createdAt") or row.get("created_at") or _now_iso()
     price_raw = req.get(str(IntegramClient.COL_PRODUCT_PRICE))
-    stock_raw = req.get(str(IntegramClient.COL_PRODUCT_STOCK))
+    stock_raw = req.get(str(IntegramClient.COL_PRODUCT_STOCK)) if IntegramClient.COL_PRODUCT_STOCK is not None else None
     active_raw = req.get(str(IntegramClient.COL_PRODUCT_ACTIVE))
     return {
         "id": row["id"],

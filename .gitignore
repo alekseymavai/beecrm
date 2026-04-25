@@ -9,3 +9,6 @@ venv/
 dist/
 dashboard/dist/
 dashboard/.env
+dashboard/node_modules/
+.playwright-mcp/
+.claude/

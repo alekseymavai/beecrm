@@ -3,58 +3,52 @@
 import json
 from typing import Any
 
+from integram.client import IntegramClient
 from integram.exceptions import IntegramError
+
+# Константы берём из IntegramClient — mappers читают оттуда же
+_C = IntegramClient
 
 
 class FakeIntegramClient:
     """In-memory реализация IntegramClient. Не делает HTTP-запросов."""
 
-    T_CLIENTS = 16
-    T_ORDERS = 17
-    T_EVENTS = 999   # ненулевое значение — события включены в тестах
-    T_STATUSES = 14
-    T_SOURCES = 15
-    T_PRODUCTS = 52
+    T_CLIENTS  = _C.T_CLIENTS
+    T_ORDERS   = _C.T_ORDERS
+    T_EVENTS   = _C.T_EVENTS
+    T_STATUSES = _C.T_STATUSES
+    T_SOURCES  = _C.T_SOURCES
+    T_PRODUCTS = _C.T_PRODUCTS
 
-    T_USERS         = 201
-    COL_USER_LOGIN  = 202
-    COL_USER_HASH   = 203
-    COL_USER_ROLE   = 204
-    COL_USER_ACTIVE = 205
+    T_USERS         = _C.T_USERS
+    COL_USER_LOGIN  = _C.COL_USER_LOGIN
+    COL_USER_HASH   = _C.COL_USER_HASH
+    COL_USER_ROLE   = _C.COL_USER_ROLE
+    COL_USER_ACTIVE = _C.COL_USER_ACTIVE
 
-    COL_PRODUCT_PRICE = 53
-    COL_PRODUCT_CATEGORY = 54
-    COL_PRODUCT_STOCK = 55
-    COL_PRODUCT_ACTIVE = 56
-    COL_PRODUCT_DESCRIPTION = 57
+    COL_PRODUCT_PRICE       = _C.COL_PRODUCT_PRICE
+    COL_PRODUCT_CATEGORY    = _C.COL_PRODUCT_CATEGORY
+    COL_PRODUCT_STOCK       = _C.COL_PRODUCT_STOCK
+    COL_PRODUCT_ACTIVE      = _C.COL_PRODUCT_ACTIVE
+    COL_PRODUCT_DESCRIPTION = _C.COL_PRODUCT_DESCRIPTION
 
-    STATUS_MAP = {
-        "NEW": 18,
-        "CONFIRMED": 190,
-        "IN_PROGRESS": 19,
-        "DONE": 20,
-        "CANCELLED": 21,
-    }
-    SOURCE_MAP = {
-        "UDS": 22,
-        "MESSENGER": 23,
-        "TABLE": 25,
-    }
+    STATUS_MAP = _C.STATUS_MAP
+    SOURCE_MAP = _C.SOURCE_MAP
 
-    COL_CLIENT_NOTES = 27
-    COL_CLIENT_PHONE = 28
-    COL_CLIENT_EMAIL = 29
-    COL_ORDER_CLIENT = 30
-    COL_ORDER_STATUS = 31
-    COL_ORDER_SOURCE = 32
-    COL_ORDER_AMOUNT = 33
-    COL_ORDER_NOTES = 34
-    COL_ORDER_CREATED_AT = 35
-    COL_EVENT_FROM = 38
-    COL_EVENT_TO = 39
-    COL_EVENT_ACTOR = 40
-    COL_EVENT_META = 41
-    COL_EVENT_TIME = 42
+    COL_CLIENT_NOTES     = _C.COL_CLIENT_NOTES
+    COL_CLIENT_PHONE     = _C.COL_CLIENT_PHONE
+    COL_CLIENT_EMAIL     = _C.COL_CLIENT_EMAIL
+    COL_ORDER_CLIENT     = _C.COL_ORDER_CLIENT
+    COL_ORDER_STATUS     = _C.COL_ORDER_STATUS
+    COL_ORDER_SOURCE     = _C.COL_ORDER_SOURCE
+    COL_ORDER_AMOUNT     = _C.COL_ORDER_AMOUNT
+    COL_ORDER_NOTES      = _C.COL_ORDER_NOTES
+    COL_ORDER_CREATED_AT = _C.COL_ORDER_CREATED_AT
+    COL_EVENT_FROM       = _C.COL_EVENT_FROM
+    COL_EVENT_TO         = _C.COL_EVENT_TO
+    COL_EVENT_ACTOR      = _C.COL_EVENT_ACTOR
+    COL_EVENT_META       = _C.COL_EVENT_META
+    COL_EVENT_TIME       = _C.COL_EVENT_TIME
 
     def __init__(self) -> None:
         self._stores: dict[int, dict[int, dict]] = {}
@@ -157,16 +151,18 @@ class FakeIntegramClient:
         payload: dict,
         actor: str = "system",
     ) -> dict:
-        notes = json.dumps({"source": source, "payload": payload}, ensure_ascii=False)
+        reqs: dict[str, Any] = {
+            str(self.COL_ORDER_CLIENT): client_id,
+            str(self.COL_ORDER_STATUS): status_id,
+            str(self.COL_ORDER_SOURCE): self.SOURCE_MAP.get(source, 0),
+        }
+        if self.COL_ORDER_NOTES is not None:
+            notes = json.dumps({"source": source, "payload": payload}, ensure_ascii=False)
+            reqs[str(self.COL_ORDER_NOTES)] = notes
         order = await self.create_object(
             self.T_ORDERS,
             value="",
-            requisites={
-                str(self.COL_ORDER_CLIENT): client_id,
-                str(self.COL_ORDER_STATUS): status_id,
-                str(self.COL_ORDER_SOURCE): self.SOURCE_MAP.get(source, 0),
-                str(self.COL_ORDER_NOTES): notes,
-            },
+            requisites=reqs,
         )
         if self.T_EVENTS:
             await self.create_object(

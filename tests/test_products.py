@@ -41,7 +41,6 @@ class TestProductCreate:
         assert resp.status_code == 201
         data = resp.json()
         assert data["price"] == 150.0
-        assert data["stock"] == 25
         assert data["category"] == "Продукты пчеловодства"
 
     def test_create_requires_name(self, client):

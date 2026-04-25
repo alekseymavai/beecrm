@@ -18,16 +18,18 @@ async def list_products(
 
 @router.post("/", response_model=ProductRead, status_code=201)
 async def create_product(body: ProductCreate, igm: IntegramClient = Depends(get_integram)):
+    reqs = {
+        str(igm.COL_PRODUCT_PRICE): body.price,
+        str(igm.COL_PRODUCT_CATEGORY): body.category,
+        str(igm.COL_PRODUCT_ACTIVE): body.active,
+        str(igm.COL_PRODUCT_DESCRIPTION): body.description,
+    }
+    if igm.COL_PRODUCT_STOCK is not None:
+        reqs[str(igm.COL_PRODUCT_STOCK)] = body.stock
     row = await igm.create_object(
         igm.T_PRODUCTS,
         value=body.name,
-        requisites={
-            str(igm.COL_PRODUCT_PRICE): body.price,
-            str(igm.COL_PRODUCT_CATEGORY): body.category,
-            str(igm.COL_PRODUCT_STOCK): body.stock,
-            str(igm.COL_PRODUCT_ACTIVE): body.active,
-            str(igm.COL_PRODUCT_DESCRIPTION): body.description,
-        },
+        requisites=reqs,
     )
     return igm_to_product(row)
 
@@ -49,7 +51,7 @@ async def update_product(
         req[str(igm.COL_PRODUCT_PRICE)] = body.price
     if body.category is not None:
         req[str(igm.COL_PRODUCT_CATEGORY)] = body.category
-    if body.stock is not None:
+    if body.stock is not None and igm.COL_PRODUCT_STOCK is not None:
         req[str(igm.COL_PRODUCT_STOCK)] = body.stock
     if body.active is not None:
         req[str(igm.COL_PRODUCT_ACTIVE)] = body.active

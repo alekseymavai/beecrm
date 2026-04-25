@@ -13,7 +13,7 @@ ADMIN_TG_ID: int = int(os.environ.get("BEEBOTLITE_ADMIN_TG_ID", "0") or "0")
 # Учётные данные Integram (берутся из общих настроек)
 INTEGRAM_LOGIN: str = os.environ.get("INTEGRAM_LOGIN", "")
 INTEGRAM_PASSWORD: str = os.environ.get("INTEGRAM_PASSWORD", "")
-INTEGRAM_WORKSPACE: str = os.environ.get("INTEGRAM_WORKSPACE", "beecrm")
+INTEGRAM_WORKSPACE: str = os.environ.get("INTEGRAM_WORKSPACE", "usadba")
 
 # ── typeId таблиц пасеки (заполнить после create_tables.py) ──────────────────
 # Задаются через env или вписываются после запуска скрипта инициализации.
