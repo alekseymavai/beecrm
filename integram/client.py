@@ -1,5 +1,6 @@
 """integram/client.py — async HTTP клиент Integram V2 API."""
 
+import asyncio
 import json
 import logging
 import re
@@ -126,7 +127,16 @@ class IntegramClient:
             rows = data.get("rows", data.get("items", data.get("data", [])))
         else:
             rows = []
-        return [_normalize_alias_row(typeId, r) for r in rows]
+        # Integram V2 list API returns sparse rows (no requisites).
+        # Enrich concurrently for tables whose mappers need requisites.
+        if rows and typeId in {self.T_ORDERS, self.T_CLIENTS, self.T_PRODUCTS, self.T_EVENTS}:
+            tasks = [self.get_object(r["id"]) for r in rows]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            rows = [
+                full if isinstance(full, dict) else orig
+                for orig, full in zip(rows, results)
+            ]
+        return rows
 
     async def get_object(self, objId: int) -> dict | None:
         try:
@@ -220,7 +230,14 @@ class IntegramClient:
                 rows = data.get("rows", data.get("items", data.get("data", [])))
             else:
                 rows = []
-            result.extend(_normalize_alias_row(self.T_ORDERS, r) for r in rows)
+            # Enrich sparse rows with full requisites
+            tasks = [self.get_object(r["id"]) for r in rows]
+            full_rows = await asyncio.gather(*tasks, return_exceptions=True)
+            enriched = [
+                full if isinstance(full, dict) else orig
+                for orig, full in zip(rows, full_rows)
+            ]
+            result.extend(enriched)
             if len(rows) < 100:
                 break
             page += 1
