@@ -256,14 +256,19 @@ BEECRM/
 ├── tests/
 │   ├── conftest.py          ← FakeIntegramClient + dependency_override
 │   ├── mocks/
-│   │   └── integram_mock.py ← in-memory имитация Integram
+│   │   └── integram_mock.py ← in-memory имитация Integram (наследует из IntegramClient)
 │   ├── test_adapters.py
 │   ├── test_client_service.py
 │   ├── test_order_service.py
+│   ├── test_mappers.py
+│   ├── test_products.py
+│   ├── test_auth.py
 │   └── test_api_from_source.py
 ├── docs/
 │   ├── architecture.md
-│   └── plan.md
+│   ├── plan.md
+│   ├── agentforge/         ← AF промты и отчёты
+│   └── archive/            ← завершённые feature-docs
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
