@@ -1,7 +1,7 @@
 # BEECRM — План работы команды
 
 > Ведётся командой AgentForge. Обновлять после каждого этапа.
-> Integram workspace: beecrm (ai2o.online)
+> Integram workspace: usadba (ai2o.online)
 
 ---
 
@@ -64,7 +64,7 @@
 |----|---------|--------|
 | ADR-001 | FastAPI + Integram API как хранилище (PostgreSQL убран) | accepted |
 | ADR-002 | X-API-Key аутентификация | accepted |
-| ADR-003 | Integram workspace `beecrm` — Клиенты/Заказы/История | accepted |
+| ADR-003 | Integram workspace `usadba` — Клиенты/Заказы/История (мигрировано с beecrm 25.04.2026) | accepted |
 | ADR-004 | Soft-delete для товаров (active=False) вместо физического удаления | accepted |
 | ADR-005 | Dashboard — отдельный SPA (Vue 3), API-ключ в localStorage | accepted |
 | ADR-006 | Import fallback: сначала Integram import API, потом openpyxl построчно | accepted |
@@ -116,3 +116,11 @@ AgentForge sprint — post-audit fixes по результатам глубок�
 **Решение:** NotifyService принимает `recipient_provider: Callable | None` через конструктор. В main.py передаётся `get_active_user_tg_ids` из apiary/integram_apiary.py. При `recipient_provider=None` — fallback на admin_tg_id.
 
 **Статус:** accepted
+
+### ADR-012 — Миграция на workspace usadba
+
+**Проблема:** Workspace `beecrm` содержал только тестовые данные. Продакшн-данные находились в `usadba`.
+
+**Решение:** Полный ремаппинг typeId/colId в `integram/client.py`. Константы прибиты к usadba (Вариант A — прямая замена). FakeIntegramClient наследует все константы из IntegramClient для автоматической синхронизации. Колонки отсутствующие в usadba (COL_ORDER_NOTES, COL_PRODUCT_STOCK) установлены в None, код обрабатывает None корректно.
+
+**Статус:** accepted (25.04.2026)

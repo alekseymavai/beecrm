@@ -29,7 +29,7 @@ def startup_check() -> None:
     INTEGRAM_LOGIN = os.environ["INTEGRAM_LOGIN"]
     INTEGRAM_PASSWORD = os.environ["INTEGRAM_PASSWORD"]
     INTEGRAM_WORKSPACE = os.environ.get("INTEGRAM_WORKSPACE", "usadba")
-    INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "37"))
+    INTEGRAM_T_EVENTS = int(os.environ.get("INTEGRAM_T_EVENTS", "28890"))
     cors_raw = os.environ.get("CORS_ORIGINS", "")
     CORS_ORIGINS = [o.strip() for o in cors_raw.split(",") if o.strip()]
     global JWT_SECRET, JWT_EXPIRE_MINUTES
