@@ -2,6 +2,8 @@
 
 import json
 import logging
+import re
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -119,10 +121,12 @@ class IntegramClient:
             params["parentId"] = parent_id
         data = await self._request("GET", f"{self.BASE}/objects", params=params)
         if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("rows", data.get("items", data.get("data", [])))
-        return []
+            rows = data
+        elif isinstance(data, dict):
+            rows = data.get("rows", data.get("items", data.get("data", [])))
+        else:
+            rows = []
+        return [_normalize_alias_row(typeId, r) for r in rows]
 
     async def get_object(self, objId: int) -> dict | None:
         try:
@@ -216,7 +220,7 @@ class IntegramClient:
                 rows = data.get("rows", data.get("items", data.get("data", [])))
             else:
                 rows = []
-            result.extend(rows)
+            result.extend(_normalize_alias_row(self.T_ORDERS, r) for r in rows)
             if len(rows) < 100:
                 break
             page += 1
@@ -318,3 +322,123 @@ class IntegramClient:
 
     async def close(self) -> None:
         await self._http.aclose()
+
+
+# ── V2 API alias-format normalization ─────────────────────────────────────────
+# Integram list_objects returns alias-keys (column names) without a requisites dict.
+# Mappers expect {requisites: {str(colId): value}}.
+# _normalize_alias_row() converts transparently; no-op if requisites already present.
+
+_REF_SUFFIX_RE = re.compile(r'\(id:(\d+)\)\s*$')
+_REF_NAME_RE   = re.compile(r'^(.*?)\s*\(id:\d+\)\s*$')
+_NUM_PREFIX_RE = re.compile(r'^(-?\d+(?:\.\d+)?)\b')
+
+
+def _alias_ref_id(value: str | None) -> str | None:
+    """'Название (id:123)' → '123'  (anchored at right to avoid false matches)."""
+    if not value:
+        return None
+    m = _REF_SUFFIX_RE.search(str(value))
+    return m.group(1) if m else None
+
+
+def _alias_ref_name(value: str | None) -> str | None:
+    """'Название (id:123)' → 'Название'."""
+    if not value:
+        return None
+    m = _REF_NAME_RE.match(str(value))
+    return m.group(1).strip() if m else str(value)
+
+
+def _alias_num(value: str | None) -> str | None:
+    """'78 (id:1300)' → '78';  '350.50' → '350.50'."""
+    if value is None:
+        return None
+    m = _NUM_PREFIX_RE.match(str(value))
+    return m.group(1) if m else (str(value) if value else None)
+
+
+def _unix_to_iso(ts: str | None) -> str | None:
+    """Unix timestamp string → UTC ISO-8601 string (timezone-safe)."""
+    if not ts:
+        return None
+    try:
+        return datetime.fromtimestamp(int(ts), tz=timezone.utc).isoformat()
+    except (ValueError, TypeError, OSError):
+        return str(ts)
+
+
+# alias → (colId_str, field_type) per typeId.
+# field_type: "ref" | "ref_name" | "num" | "date" | "bool" | "text"
+_ALIAS_MAPS: dict[int, dict[str, tuple[str, str]]] = {
+    IntegramClient.T_CLIENTS: {
+        "Телефон": (str(IntegramClient.COL_CLIENT_PHONE), "text"),
+        "Email":   (str(IntegramClient.COL_CLIENT_EMAIL),  "text"),
+    },
+    IntegramClient.T_ORDERS: {
+        "Статус заказа": (str(IntegramClient.COL_ORDER_STATUS),     "ref"),
+        "Источник":      (str(IntegramClient.COL_ORDER_SOURCE),     "ref"),
+        "Клиент":        (str(IntegramClient.COL_ORDER_CLIENT),     "ref"),
+        "Дата":          (str(IntegramClient.COL_ORDER_CREATED_AT), "date"),
+        "Сумма":         (str(IntegramClient.COL_ORDER_AMOUNT),     "num"),
+    },
+    IntegramClient.T_PRODUCTS: {
+        "Цена":      (str(IntegramClient.COL_PRODUCT_PRICE),        "num"),
+        "Категория": (str(IntegramClient.COL_PRODUCT_CATEGORY),     "ref_name"),
+        "В наличии": (str(IntegramClient.COL_PRODUCT_ACTIVE),       "bool"),
+        "Описание":  (str(IntegramClient.COL_PRODUCT_DESCRIPTION),  "text"),
+    },
+}
+
+
+def _normalize_alias_row(typeId: int, row: dict) -> dict:
+    """Convert Integram V2 list alias-format row to requisites-format for mappers.
+
+    list_objects returns alias-keys (column names) without a requisites dict.
+    get_object / create_object / FakeIntegramClient already return requisites-format
+    and are returned unchanged.
+    """
+    if "requisites" in row:
+        return row
+
+    alias_map = _ALIAS_MAPS.get(typeId, {})
+    requisites: dict[str, Any] = {}
+
+    for alias, (col_id, field_type) in alias_map.items():
+        raw = row.get(alias)
+        if raw is None:
+            continue
+        if field_type == "ref":
+            val = _alias_ref_id(raw)
+            if val is not None:
+                requisites[col_id] = val
+        elif field_type == "ref_name":
+            val = _alias_ref_name(raw)
+            if val is not None:
+                requisites[col_id] = val
+        elif field_type == "num":
+            val = _alias_num(raw)
+            if val is not None:
+                requisites[col_id] = val
+        elif field_type == "date":
+            val = _unix_to_iso(str(raw))
+            if val is not None:
+                requisites[col_id] = val
+        elif field_type == "bool":
+            requisites[col_id] = raw
+        else:  # "text"
+            requisites[col_id] = raw
+
+    normalized: dict[str, Any] = {
+        **row,
+        "value": row.get("name") or row.get("value") or "",
+        "requisites": requisites,
+    }
+
+    # Inject createdAt from unix date aliases for mappers that read row["createdAt"]
+    if not normalized.get("createdAt") and typeId == IntegramClient.T_CLIENTS:
+        raw_date = row.get("Дата регистрации")
+        if raw_date:
+            normalized["createdAt"] = _unix_to_iso(str(raw_date))
+
+    return normalized

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from integram.client import IntegramClient
 
 _REVERSE_STATUS: dict[int, str] = {v: k for k, v in IntegramClient.STATUS_MAP.items()}
+_REVERSE_SOURCE: dict[int, str] = {v: k for k, v in IntegramClient.SOURCE_MAP.items()}
 
 
 def _extract_ref(value: int | dict | None) -> int | None:
@@ -52,6 +53,9 @@ def igm_to_order(row: dict) -> dict:
     client_raw = req.get(str(IntegramClient.COL_ORDER_CLIENT))
     client_id = int(client_raw) if client_raw else _extract_ref(row.get("client"))
 
+    source_raw_ref = req.get(str(IntegramClient.COL_ORDER_SOURCE))
+    source_from_ref = _REVERSE_SOURCE.get(int(source_raw_ref)) if source_raw_ref else None
+
     created_at = (
         req.get(str(IntegramClient.COL_ORDER_CREATED_AT))
         or row.get("createdAt")
@@ -61,7 +65,7 @@ def igm_to_order(row: dict) -> dict:
     return {
         "id": row["id"],
         "client_id": client_id,
-        "source": notes.get("source", "MESSENGER"),
+        "source": notes.get("source") or source_from_ref or "MESSENGER",
         "status": status_str,
         "payload": notes.get("payload", {}),
         "created_at": created_at,
